@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Environment files — never commit API keys
+.env
+.env.local
+.env.*.local
+
+# Build output (if a bundler is added later)
+dist/
+build/
+.parcel-cache/
+.vite/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp

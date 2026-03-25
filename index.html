@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Verdant — Regenerative Land Design</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  <link rel="stylesheet" href="src/css/verdant.css">
+</head>
+<body>
+
+<!-- ══ S0: SETUP ══ -->
+<div class="screen active" id="s0">
+  <div class="setup-glow"></div>
+  <div class="setup-inner">
+    <div class="setup-emblem">🌿</div>
+    <div class="setup-title">Welcome to <em>Verdant</em></div>
+    <div class="setup-sub">Regenerative land design powered by ecological intelligence. Let's set up your workspace.</div>
+
+    <div class="setup-card">
+      <div class="setup-card-title">API Configuration</div>
+      <div class="setup-field">
+        <div class="setup-label">Anthropic API Key</div>
+        <input class="setup-input" id="apiKey" type="password" placeholder="sk-ant-…" autocomplete="off">
+        <div class="setup-hint">Your key is used only in this session and never stored. <a href="https://console.anthropic.com" target="_blank">Get a key →</a></div>
+      </div>
+      <div class="setup-field">
+        <div class="setup-label">Mapbox Token <span style="color:var(--muted2);font-weight:400">(optional — for satellite map)</span></div>
+        <input class="setup-input" id="mapboxToken" type="text" placeholder="pk.eyJ1…" autocomplete="off">
+        <div class="setup-hint"><a href="https://account.mapbox.com/access-tokens/" target="_blank">Get a free token at mapbox.com →</a></div>
+      </div>
+    </div>
+
+    <div class="setup-card">
+      <div class="setup-card-title">Property Details</div>
+      <div class="setup-field">
+        <div class="setup-label">Property Name</div>
+        <input class="setup-input" id="propName" placeholder="e.g. Hillside Creek Property" value="Hillside Creek Property">
+      </div>
+      <div class="setup-field">
+        <div class="setup-label">Location / Address</div>
+        <input class="setup-input" id="propAddress" placeholder="e.g. Daylesford, Victoria, Australia" value="Daylesford, Victoria, Australia">
+      </div>
+      <div class="setup-field">
+        <div class="setup-label">Size</div>
+        <input class="setup-input" id="propSize" placeholder="e.g. 3.4 acres" value="3.4 acres">
+      </div>
+      <div class="setup-field">
+        <div class="setup-label">Soil type (if known)</div>
+        <input class="setup-input" id="propSoil" placeholder="e.g. Clay-loam, sandy, volcanic" value="Clay-loam, pH 6.2">
+      </div>
+      <div class="setup-field">
+        <div class="setup-label">Water features</div>
+        <input class="setup-input" id="propWater" placeholder="e.g. Seasonal creek, bore, dam" value="Seasonal creek on eastern boundary">
+      </div>
+    </div>
+
+    <div class="setup-card">
+      <div class="setup-card-title">Primary Goals</div>
+      <div class="goal-grid" id="goalGrid">
+        <div class="goal-pill on" data-g="food abundance">🍎 Food abundance</div>
+        <div class="goal-pill on" data-g="water security">💧 Water security</div>
+        <div class="goal-pill" data-g="income from land">💰 Income from land</div>
+        <div class="goal-pill on" data-g="wildlife habitat">🦋 Wildlife habitat</div>
+        <div class="goal-pill on" data-g="soil restoration">🪱 Soil restoration</div>
+        <div class="goal-pill" data-g="low maintenance">⏱ Low maintenance</div>
+        <div class="goal-pill on" data-g="medicinal plants">🌿 Medicinal plants</div>
+        <div class="goal-pill" data-g="carbon sequestration">🌳 Carbon storage</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" style="margin-top:4px;padding:15px;font-size:16px" id="startBtn">
+      Begin Design ›
+    </button>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- ══ S1: MAP ══ -->
+<div class="screen" id="s1" style="position:fixed;inset:0;overflow:hidden;">
+
+  <!-- Real Mapbox map fills the screen -->
+  <div id="verdantMap" style="position:absolute;inset:0;"></div>
+
+  <!-- Top HUD -->
+  <div style="position:absolute;top:0;left:0;right:0;z-index:50;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,rgba(8,14,5,.88) 0%,transparent 100%);pointer-events:none;">
+    <div style="font-family:'Lora',serif;font-size:18px;color:#90d060;display:flex;align-items:center;gap:7px;pointer-events:all;">🌿 Verdant</div>
+    <div style="background:rgba(12,20,8,.92);border:1px solid var(--border);border-radius:30px;padding:5px 13px;font-size:11px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:6px;pointer-events:all;">
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--green);animation:ldot 2s infinite"></div>
+      <span id="mapPropBadge">My Property</span>
+    </div>
+  </div>
+
+  <!-- Search bar -->
+  <div style="position:absolute;top:54px;left:50%;transform:translateX(-50%);z-index:50;width:min(340px,calc(100vw - 32px));display:flex;background:rgba(12,20,8,.94);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);backdrop-filter:blur(12px);">
+    <input id="mapSearchInput" type="text" placeholder="Search another location…" style="flex:1;padding:10px 13px;background:none;border:none;color:var(--cream);font-family:'Nunito',sans-serif;font-size:13px;outline:none;" id="mapSearchInput">
+    <button id="mapSearchBtn" style="padding:10px 13px;background:rgba(85,176,37,.15);border:none;border-left:1px solid var(--border);color:#90d060;font-size:14px;cursor:pointer;">🔍</button>
+  </div>
+
+  <!-- Map style controls -->
+  <div style="position:absolute;top:58px;right:12px;z-index:50;display:flex;flex-direction:column;gap:5px;">
+    <button id="btn-sat" style="width:36px;height:36px;border-radius:9px;background:rgba(85,176,37,.2);border:1px solid rgba(85,176,37,.4);color:#a0e060;font-size:13px;cursor:pointer;" title="Satellite">🛰</button>
+    <button id="btn-topo" style="width:36px;height:36px;border-radius:9px;background:rgba(12,20,8,.9);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;" title="Terrain">🗺</button>
+    <button id="btn-draw" style="width:36px;height:36px;border-radius:9px;background:rgba(12,20,8,.9);border:1px solid rgba(232,168,48,.3);color:var(--amber-lt);font-size:13px;cursor:pointer;" title="Draw boundary">✏️</button>
+  </div>
+
+  <!-- Layer switcher -->
+  <div id="mapLayerSwitcher" style="position:absolute;top:58px;left:12px;z-index:50;display:none;flex-direction:column;gap:4px;">
+    <div id="layer-water" data-layer="water" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border-radius:9px;background:rgba(12,20,8,.9);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;">
+      <div style="width:7px;height:7px;border-radius:50%;background:#3a9fc8"></div>💧 Water
+    </div>
+    <div id="layer-food" data-layer="food" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border-radius:9px;background:rgba(12,20,8,.9);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;">
+      <div style="width:7px;height:7px;border-radius:50%;background:#5cb832"></div>🌳 Food
+    </div>
+    <div id="layer-solar" data-layer="solar" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border-radius:9px;background:rgba(12,20,8,.9);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;">
+      <div style="width:7px;height:7px;border-radius:50%;background:#e8a830"></div>☀️ Solar
+    </div>
+    <div id="layer-soil" data-layer="soil" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border-radius:9px;background:rgba(12,20,8,.9);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;">
+      <div style="width:7px;height:7px;border-radius:50%;background:#c87830"></div>🪱 Soil
+    </div>
+  </div>
+
+  <!-- Draw mode banner -->
+  <div id="mapDrawBanner" style="position:absolute;top:54px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(232,168,48,.12);border:1px solid rgba(232,168,48,.4);border-radius:30px;padding:7px 18px;font-size:12px;font-weight:700;color:var(--amber-lt);display:none;align-items:center;gap:8px;white-space:nowrap;backdrop-filter:blur(8px);">
+    ✏️ Tap to place boundary points
+  </div>
+
+  <!-- Boundary toolbar -->
+  <div id="mapBoundaryToolbar" style="position:absolute;bottom:110px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(12,20,8,.94);border:1px solid rgba(232,168,48,.3);border-radius:50px;padding:7px 14px;display:none;align-items:center;gap:10px;font-size:12px;font-weight:700;color:var(--amber-lt);backdrop-filter:blur(12px);">
+    <button id="confirmBoundaryBtn" style="padding:5px 13px;border-radius:20px;border:none;background:rgba(85,176,37,.2);border:1px solid rgba(85,176,37,.3);color:#a0e060;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">✓ Confirm</button>
+    <button id="clearBoundaryBtn" style="padding:5px 13px;border-radius:20px;border:none;background:rgba(255,255,255,.06);color:var(--muted);font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">Clear</button>
+  </div>
+
+  <!-- Acre badge -->
+  <div id="mapAcreBadge" style="position:absolute;bottom:150px;left:50%;transform:translateX(-50%);z-index:50;background:rgba(12,20,8,.9);border:1px solid var(--border);border-radius:30px;padding:5px 14px;font-size:12px;font-weight:700;color:var(--green-lt);display:none;"></div>
+
+  <!-- Bottom HUD -->
+  <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:9px;">
+    <div style="background:rgba(12,20,8,.94);border:1px solid var(--border);border-radius:50px;padding:9px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);backdrop-filter:blur(12px);">
+      <div style="display:flex;align-items:center;gap:5px;"><span style="font-size:13px">🌧️</span><div><div style="font-weight:800;font-size:12px" id="mv-w">–</div><div style="color:var(--muted);font-size:9px">Rain saved</div></div></div>
+      <div style="width:1px;height:16px;background:var(--border)"></div>
+      <div style="display:flex;align-items:center;gap:5px;"><span style="font-size:13px">🍎</span><div><div style="font-weight:800;font-size:12px" id="mv-f">–</div><div style="color:var(--muted);font-size:9px">Food/yr</div></div></div>
+      <div style="width:1px;height:16px;background:var(--border)"></div>
+      <div style="display:flex;align-items:center;gap:5px;"><span style="font-size:13px">✅</span><div><div style="font-weight:800;font-size:12px" id="mv-s">0</div><div style="color:var(--muted);font-size:9px">Selected</div></div></div>
+    </div>
+    <button id="mapCta" style="padding:10px 18px;border:none;border-radius:50px;background:linear-gradient(135deg,#2a6018,#4a9828);color:var(--cream);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 3px 16px rgba(74,152,40,.4);opacity:0;pointer-events:none;transform:scale(.9);transition:all .25s;">Plants →</button>
+  </div>
+
+  <!-- AI status indicator -->
+  <div id="mapAIStatus" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:60;background:rgba(12,20,8,.96);border:1px solid rgba(85,176,37,.3);border-radius:16px;padding:16px 24px;font-size:13px;font-weight:700;color:#90d060;gap:10px;align-items:center;backdrop-filter:blur(16px);box-shadow:0 8px 40px rgba(0,0,0,.6);">
+    🌿 Analysing terrain…
+  </div>
+
+  <!-- Compass rose -->
+  <div id="compassRose" style="position:absolute;bottom:90px;right:14px;z-index:51;width:54px;height:54px;background:rgba(12,20,8,.92);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);">
+    <div style="position:relative;width:36px;height:36px;">
+      <div id="compassNeedle" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;transition:transform .15s;">
+        <div style="width:2px;height:14px;background:#e84040;border-radius:1px;margin-top:2px;"></div>
+        <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:7px solid #e84040;margin-top:-1px;"></div>
+        <div style="width:2px;height:8px;background:rgba(255,255,255,.3);border-radius:1px;margin-top:1px;"></div>
+      </div>
+      <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:800;color:#e84040;">N</div>
+      <div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--muted);">S</div>
+      <div style="position:absolute;left:-8px;top:50%;transform:translateY(-50%);font-size:8px;color:var(--muted);">W</div>
+      <div style="position:absolute;right:-8px;top:50%;transform:translateY(-50%);font-size:8px;color:var(--muted);">E</div>
+    </div>
+  </div>
+
+  <!-- Elevation badge -->
+  <div id="elevBadge" style="display:none;position:absolute;bottom:90px;left:14px;z-index:51;background:rgba(12,20,8,.92);border:1px solid var(--border);border-radius:12px;padding:8px 12px;font-size:11px;color:var(--muted);line-height:1.6;box-shadow:var(--shadow);">
+    <div style="font-weight:700;color:var(--cream);margin-bottom:2px">📐 Terrain</div>
+    <div id="elevRelief">Relief: —</div>
+    <div id="elevAspect">Aspect: —</div>
+  </div>
+
+  <!-- Side Drawer -->
+  <div class="drawer" id="drawer">
+    <div class="d-hd" id="d-hd"></div>
+    <div class="d-body" id="d-body"></div>
+    <div class="d-ft" id="d-ft"></div>
+  </div>
+</div>
+
+<!-- ══ S2: PLANTS ══ -->
+<div class="screen" id="s2">
+  <div class="topbar">
+    <div class="logo">🌿 Verdant</div>
+    <div class="page-title">Matched to <em>your land</em></div>
+    <div class="page-sub" id="plantSub">Fetch local data, then analyse</div>
+  </div>
+  <div class="screen-body">
+
+    <div class="rtabs" id="rtabs" style="display:none">
+      <button class="rtab on" data-tab="plants">
+        🌿 Plants <span class="rtab-n on" id="rtn-plants">0</span>
+      </button>
+      <button class="rtab" data-tab="medicinals">
+        🌿 Medicinals <span class="rtab-n" id="rtn-meds">0</span>
+      </button>
+      <button class="rtab" data-tab="wildlife">
+        🦋 Wildlife <span class="rtab-n" id="rtn-wild">0</span>
+      </button>
+    </div>
+
+    <div class="fetch-panel" id="fetchPanel">
+      <div class="fp-head" id="fetchPanelHead">
+        <div class="fp-label">Data Sources</div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <div class="fp-status" id="fpStatus">
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--muted2);display:inline-block"></span>
+            Not fetched
+          </div>
+          <div class="fp-chev" id="fpChev">›</div>
+        </div>
+      </div>
+      <div class="fp-body">
+        <div class="frow">
+          <div class="frico">🌿</div>
+          <div style="flex:1"><div class="fr-name">iNaturalist — Native Plants</div>
+            <div class="fr-desc">Research-grade observations within 15km</div></div>
+          <div class="fbadge fb-off" id="fb-plants">Not fetched</div>
+        </div>
+        <div class="frow">
+          <div class="frico">🦋</div>
+          <div style="flex:1"><div class="fr-name">iNaturalist — Local Animals</div>
+            <div class="fr-desc">Birds, insects, mammals, amphibians within 15km</div></div>
+          <div class="fbadge fb-off" id="fb-animals">Not fetched</div>
+        </div>
+        <div class="coord-row">
+          <input class="coord-in" id="inatLat" type="number" step=".0001" value="-37.3522" placeholder="Latitude">
+          <input class="coord-in" id="inatLng" type="number" step=".0001" value="144.9631" placeholder="Longitude">
+          <button class="fetch-btn" id="fetchBtn">Fetch →</button>
+        </div>
+        <div class="fetch-summary" id="fetchSummary"></div>
+        <div class="frow" style="margin-top:9px">
+          <div class="frico">🛒</div>
+          <div style="flex:1"><div class="fr-name">Store Availability — Live Web Search</div>
+            <div class="fr-desc">Claude searches regional nurseries in real time</div></div>
+          <div class="fbadge fb-live">Live</div>
+        </div>
+        <div class="frow">
+          <div class="frico">📊</div>
+          <div style="flex:1"><div class="fr-name">Property Profile</div>
+            <div class="fr-desc">Your climate, soil, goals and selected systems</div></div>
+          <div class="fbadge fb-ready">Ready</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sys-row" id="sysRow"></div>
+
+    <div class="abtn-wrap">
+      <button class="abtn" id="abtn">✦ Analyse My Land</button>
+    </div>
+
+    <div class="err-card" id="errCard"></div>
+
+    <div class="loading" id="loading">
+      <div class="lorb">🌱</div>
+      <div class="lname">Analysing your property…</div>
+      <div class="lsteps">
+        <div class="lstep" id="ls1"><div class="ldot"></div>Reading climate, soil & slope</div>
+        <div class="lstep" id="ls2"><div class="ldot"></div>Processing iNaturalist data</div>
+        <div class="lstep" id="ls3"><div class="ldot"></div>Searching regional availability</div>
+        <div class="lstep" id="ls4"><div class="ldot"></div>Mapping animal–plant relationships</div>
+        <div class="lstep" id="ls5"><div class="ldot"></div>Writing property-specific notes</div>
+      </div>
+    </div>
+
+    <div class="empty-state" id="plantsEmpty">
+      <div class="es-icon">🌱</div>
+      <div class="es-title">Ready to read your land</div>
+      <div class="es-sub">Fetch iNaturalist data for richer recommendations, then hit Analyse — Claude will reason across your property, local wildlife, and available species simultaneously.</div>
+    </div>
+
+    <div class="cpanel" id="cp-plants">
+      <div class="fbar" id="plantFbar"></div>
+      <div class="plist" id="plantList"></div>
+    </div>
+
+    <div class="cpanel" id="cp-medicinals">
+      <div style="padding:13px 14px 6px">
+        <div style="font-family:'Lora',serif;font-size:15px;font-weight:600;margin-bottom:3px">Native Medicinals</div>
+        <div style="font-size:12px;color:var(--muted)" id="medSubtitle"></div>
+      </div>
+      <div class="medlist" id="medList"></div>
+    </div>
+
+    <div class="cpanel" id="cp-wildlife">
+      <div style="padding:13px 14px 6px">
+        <div style="font-family:'Lora',serif;font-size:15px;font-weight:600;margin-bottom:3px">Local Wildlife</div>
+        <div style="font-size:12px;color:var(--muted)" id="wildSubtitle"></div>
+      </div>
+      <div class="wildlist" id="wildList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S3: PLAN ══ -->
+<div class="screen" id="s3">
+  <div class="topbar">
+    <div class="logo">🌿 Verdant</div>
+    <div class="page-title">Your <em>design plan</em></div>
+    <div class="page-sub">Phased, sequenced & matched to your land</div>
+  </div>
+  <div class="screen-body">
+    <div class="sec-label">Overview</div>
+    <div class="plan-summary">
+      <div class="plan-box"><div class="pb-v">3</div><div class="pb-l">Design phases</div></div>
+      <div class="plan-box"><div class="pb-v">~10 yrs</div><div class="pb-l">Full maturity</div></div>
+      <div class="plan-box"><div class="pb-v">+27%</div><div class="pb-l">Soil carbon yr 10</div></div>
+      <div class="plan-box"><div class="pb-v">~4 hrs</div><div class="pb-l">Weekly at yr 3</div></div>
+    </div>
+    <div class="sec-label">Phased Implementation</div>
+    <div id="phaseList" style="padding:0 14px"></div>
+    <div class="sec-label">Earthworks Specification</div>
+    <div style="padding:0 14px">
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">💧 Swale Dimensions</div>
+        <table class="spec-table">
+          <thead><tr><th>Location</th><th>Length</th><th>Width</th><th>Depth</th></tr></thead>
+          <tbody>
+            <tr><td>Upper slope</td><td>18m</td><td>0.8m</td><td>0.4m</td></tr>
+            <tr><td>Mid slope</td><td>22m</td><td>1.0m</td><td>0.5m</td></tr>
+            <tr><td>Lower slope</td><td>20m</td><td>0.9m</td><td>0.45m</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">🌊 Retention Pond</div>
+        <table class="spec-table">
+          <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Surface area</td><td>400m²</td></tr>
+            <tr><td>Max depth</td><td>1.8m</td></tr>
+            <tr><td>Spillway width</td><td>2.4m</td></tr>
+            <tr><td>Inlet type</td><td>Rock-lined channel</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div style="height:90px"></div>
+  </div>
+</div>
+
+<!-- ══ S4: CALENDAR ══ -->
+<div class="screen" id="s4">
+  <div class="topbar">
+    <div class="logo">🌿 Verdant</div>
+    <div class="page-title"><em>Maintenance</em> calendar</div>
+    <div class="page-sub">What to do, when — and how long it takes</div>
+  </div>
+  <div class="screen-body">
+    <div class="sec-label">Annual Effort</div>
+    <div style="padding:0 14px">
+      <div class="effort-bar"><div class="eff-ico">🌱</div><div class="eff-info"><div class="eff-label">Year 1 — Establishment</div><div class="eff-prog"><div class="eff-fill" style="width:72%"></div></div></div><div class="eff-hrs">8–10 hrs/wk</div></div>
+      <div class="effort-bar"><div class="eff-ico">🌿</div><div class="eff-info"><div class="eff-label">Year 2–3 — Growing</div><div class="eff-prog"><div class="eff-fill" style="width:44%"></div></div></div><div class="eff-hrs">4–6 hrs/wk</div></div>
+      <div class="effort-bar"><div class="eff-ico">🌳</div><div class="eff-info"><div class="eff-label">Year 4+ — Mature</div><div class="eff-prog"><div class="eff-fill" style="width:22%"></div></div></div><div class="eff-hrs">2–3 hrs/wk</div></div>
+    </div>
+    <div class="sec-label">Seasonal Tasks</div>
+    <div class="season-tabs">
+      <button class="stab on" data-season="spring"><span>🌸</span>Spring</button>
+      <button class="stab" data-season="summer"><span>☀️</span>Summer</button>
+      <button class="stab" data-season="autumn"><span>🍂</span>Autumn</button>
+      <button class="stab" data-season="winter"><span>❄️</span>Winter</button>
+    </div>
+    <div id="calContent" style="padding-bottom:90px"></div>
+  </div>
+</div>
+
+<!-- ══ S5: REPORT ══ -->
+<div class="screen" id="s5">
+  <div class="topbar">
+    <div class="logo">🌿 Verdant</div>
+    <div class="page-title">Your <em>report</em></div>
+    <div class="page-sub">Share or save your regenerative design</div>
+  </div>
+  <div class="screen-body">
+    <div class="report-hero">
+      <div class="rh-title" id="rh-title">Property Report</div>
+      <div class="rh-sub" id="rh-sub">Regenerative Design · Generated today</div>
+      <div class="rh-scores">
+        <div class="rh-sc"><div class="rh-val" id="rs-w">–</div><div class="rh-lbl">Water security</div></div>
+        <div class="rh-sc"><div class="rh-val" id="rs-b">–</div><div class="rh-lbl">Biodiversity</div></div>
+        <div class="rh-sc"><div class="rh-val" id="rs-s">–</div><div class="rh-lbl">Systems</div></div>
+        <div class="rh-sc"><div class="rh-val" id="rs-p">–</div><div class="rh-lbl">Plants</div></div>
+      </div>
+    </div>
+    <div class="sec-label">Export & Share</div>
+    <div class="share-card" id="exportPdf">
+      <div class="sc-ico" style="background:rgba(212,148,26,.14)">📄</div>
+      <div><div class="sc-title">Download Full PDF Report</div><div class="sc-sub">Complete design plan, plant list & specifications</div></div>
+      <div class="sc-arr">›</div>
+    </div>
+    <div class="share-card" id="exportPlanting">
+      <div class="sc-ico" style="background:rgba(85,176,37,.12)">🌿</div>
+      <div><div class="sc-title">Export Planting Plan</div><div class="sc-sub">Species list with quantities, spacing & timing</div></div>
+      <div class="sc-arr">›</div>
+    </div>
+    <div class="share-card" id="shareLink">
+      <div class="sc-ico" style="background:rgba(43,151,181,.12)">🔗</div>
+      <div><div class="sc-title">Share Design Link</div><div class="sc-sub">View-only link for your client or collaborator</div></div>
+      <div class="sc-arr">›</div>
+    </div>
+    <div class="share-card" id="exportCalendar">
+      <div class="sc-ico" style="background:rgba(180,100,40,.12)">📅</div>
+      <div><div class="sc-title">Export Maintenance Calendar</div><div class="sc-sub">Year 1–5 task schedule as spreadsheet</div></div>
+      <div class="sc-arr">›</div>
+    </div>
+    <div class="sec-label">Property Summary</div>
+    <div class="card" style="margin:0 14px;font-size:13px;line-height:1.8;" id="reportSummary">
+      Run the plant analysis to generate your full report summary.
+    </div>
+    <div style="height:90px"></div>
+  </div>
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<nav id="appNav">
+  <div class="nav-items">
+    <button class="ni" id="n-s1" data-screen="s1">
+      <span class="ni-icon">🗺️</span><span>Map</span>
+      <span class="ni-badge on" id="nb-map">0</span>
+    </button>
+    <button class="ni" id="n-s2" data-screen="s2">
+      <span class="ni-icon">🌿</span><span>Plants</span>
+      <span class="ni-badge" id="nb-plants">0</span>
+    </button>
+    <button class="ni" id="n-s3" data-screen="s3">
+      <span class="ni-icon">📋</span><span>Design</span>
+    </button>
+    <button class="ni" id="n-s4" data-screen="s4">
+      <span class="ni-icon">📅</span><span>Calendar</span>
+    </button>
+    <button class="ni" id="n-s5" data-screen="s5">
+      <span class="ni-icon">📄</span><span>Report</span>
+    </button>
+  </div>
+</nav>
+
+<div id="toast"><span id="t-i">✅</span> <span id="t-m">Done</span></div>
+
+<!-- JS modules -->
+<script type="module" src="src/js/app.js"></script>
+
+</body>
+</html>
