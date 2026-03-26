@@ -277,7 +277,13 @@ export async function sampleTerrainAndAnalyse(cx, cy) {
   const avgNorth = northSamples.reduce((a, b) => a + b.elev, 0) / northSamples.length;
   const avgSouth = southSamples.reduce((a, b) => a + b.elev, 0) / southSamples.length;
   const slopeDir = avgNorth > avgSouth ? 'north-to-south' : 'south-to-north';
-  const aspect = avgSouth > avgNorth ? 'north-facing (good solar)' : 'south-facing (cooler, moister)';
+
+  // Hemisphere-aware aspect: in the Northern Hemisphere south-facing slopes
+  // get more sun; in the Southern Hemisphere north-facing slopes do.
+  const isNorthernHemisphere = cy >= 0;
+  const aspect = isNorthernHemisphere
+    ? (avgNorth > avgSouth ? 'south-facing (good solar)' : 'north-facing (cooler, moister)')
+    : (avgSouth > avgNorth ? 'north-facing (good solar)' : 'south-facing (cooler, moister)');
 
   const terrainContext = {
     cx, cy,

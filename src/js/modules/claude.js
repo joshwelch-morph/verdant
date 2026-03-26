@@ -63,6 +63,7 @@ TERRAIN DATA:
 - Soil: ${tc.soil}
 - Water features: ${tc.water}
 - Owner goals: ${(tc.goals || []).join(', ')}
+- Hemisphere: ${tc.cy >= 0 ? 'Northern Hemisphere — south-facing slopes receive more sun' : 'Southern Hemisphere — north-facing slopes receive more sun'}
 
 Based on this REAL terrain data, place 4–6 regenerative design opportunities at the most appropriate coordinates on this property. Each opportunity must be placed using actual terrain reasoning — not generic positions.
 
@@ -134,6 +135,7 @@ Climate: ${prop.climate || 'temperate'} | Rainfall: ${prop.rainfall || 'unknown'
 Soil: ${prop.soil} | Slope: ${prop.slope || 'gentle'}
 Water: ${prop.water} | Frost: ${prop.frost || 'light'}
 Existing: ${prop.existing || 'pasture'} | Hardiness: ${prop.hardiness || 'temperate'}
+Hemisphere: ${prop.address.match(/australia|new zealand|south africa|argentina|chile|brazil/i) ? 'Southern — north-facing slopes get more sun' : 'Northern — south-facing slopes get more sun'}
 Goals: ${prop.goals.join(', ')}
 SELECTED SYSTEMS: ${systems.join(', ')}
 
