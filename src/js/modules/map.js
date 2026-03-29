@@ -47,7 +47,7 @@ export function initMap() {
   verdantMap = new mapboxgl.Map({
     container: 'verdantMap',
     style: 'mapbox://styles/mapbox/satellite-streets-v12',
-    zoom: 15,
+    zoom: 17,
     pitch: 45,
     bearing: -20,
     center: [144.9631, -37.3522], // default; replaced by geocode
@@ -107,38 +107,59 @@ function _addContourLayers() {
     type: 'vector',
     url: 'mapbox://mapbox.mapbox-terrain-v2',
   });
+
+  // Minor contours — every 10m, visible at plot scale (zoom 15+)
   verdantMap.addLayer({
-    id: 'contour-lines',
+    id: 'contour-lines-minor',
     type: 'line',
     source: 'contours',
     'source-layer': 'contour',
+    filter: ['==', ['%', ['get', 'ele'], 10], 0],
+    minzoom: 14,
     paint: {
-      'line-color': ['interpolate', ['linear'], ['get', 'ele'],
-        0, 'rgba(58,159,200,0.3)',
-        200, 'rgba(92,184,50,0.3)',
-        500, 'rgba(232,168,48,0.3)',
-        1000, 'rgba(200,80,40,0.3)',
-      ],
-      'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.5, 16, 1.5],
-      'line-opacity': 0.7,
+      'line-color': 'rgba(120,200,80,0.45)',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 14, 0.5, 17, 1.2, 19, 1.8],
+      'line-opacity': ['interpolate', ['linear'], ['zoom'], 14, 0.4, 16, 0.7],
     },
   });
+
+  // Major contours — every 50m, bolder, visible from further out
+  verdantMap.addLayer({
+    id: 'contour-lines-major',
+    type: 'line',
+    source: 'contours',
+    'source-layer': 'contour',
+    filter: ['==', ['%', ['get', 'ele'], 50], 0],
+    paint: {
+      'line-color': ['interpolate', ['linear'], ['get', 'ele'],
+        0,    'rgba(58,159,200,0.7)',
+        200,  'rgba(120,200,80,0.7)',
+        500,  'rgba(232,168,48,0.7)',
+        1000, 'rgba(200,80,40,0.7)',
+      ],
+      'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.8, 16, 2, 19, 2.5],
+      'line-opacity': 0.85,
+    },
+  });
+
+  // Contour labels — show every 10m at close zoom, every 50m further out
   verdantMap.addLayer({
     id: 'contour-labels',
     type: 'symbol',
     source: 'contours',
     'source-layer': 'contour',
-    filter: ['==', ['%', ['get', 'ele'], 50], 0],
+    filter: ['==', ['%', ['get', 'ele'], 10], 0],
+    minzoom: 15,
     layout: {
       'symbol-placement': 'line',
       'text-field': ['concat', ['to-string', ['get', 'ele']], 'm'],
-      'text-size': 9,
+      'text-size': ['interpolate', ['linear'], ['zoom'], 15, 9, 18, 11],
       'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Regular'],
     },
     paint: {
-      'text-color': 'rgba(200,230,160,0.7)',
-      'text-halo-color': 'rgba(0,0,0,0.5)',
-      'text-halo-width': 1,
+      'text-color': 'rgba(200,230,160,0.9)',
+      'text-halo-color': 'rgba(0,0,0,0.7)',
+      'text-halo-width': 1.5,
     },
   });
 }
@@ -196,7 +217,7 @@ async function _geocodeAddress(address, token) {
     const d = await r.json();
     if (d.features?.length) {
       const [lng, lat] = d.features[0].center;
-      verdantMap.flyTo({ center: [lng, lat], zoom: 16, pitch: 45, bearing: -20, duration: 2500 });
+      verdantMap.flyTo({ center: [lng, lat], zoom: 18, pitch: 45, bearing: -20, duration: 2500 });
       const badge = document.getElementById('mapPropBadge');
       if (badge) badge.textContent = d.features[0].place_name?.split(',')[0] || address;
       setTimeout(() => {
@@ -219,7 +240,7 @@ export async function geocodeSearch() {
     const d = await r.json();
     if (d.features?.length) {
       const [lng, lat] = d.features[0].center;
-      verdantMap.flyTo({ center: [lng, lat], zoom: 16, pitch: 45, bearing: -20, duration: 1800 });
+      verdantMap.flyTo({ center: [lng, lat], zoom: 18, pitch: 45, bearing: -20, duration: 1800 });
       _clearAllMarkers();
       setTimeout(() => {
         _placeDefaultBoundary(lng, lat);
