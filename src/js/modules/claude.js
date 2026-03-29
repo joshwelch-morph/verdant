@@ -183,7 +183,7 @@ export async function runPlantAnalysis(systems) {
       })()
     : 'No iNaturalist animal data — use regional knowledge for ' + prop.address;
 
-  const systemPrompt = `You are an expert permaculture designer, plant ecologist, herbalist, and wildlife ecologist. Respond ONLY with valid JSON — no markdown fences, no preamble.`;
+  const systemPrompt = `You are an expert permaculture designer, plant ecologist, herbalist, and wildlife ecologist. Respond ONLY with valid JSON — no markdown fences, no preamble, no explanation before or after the JSON.`;
 
   const userPrompt = `Analyse this property and return plant recommendations, native medicinals, and a wildlife overview.
 
@@ -199,21 +199,19 @@ SELECTED SYSTEMS: ${systems.join(', ')}
 INATURALIST PLANTS: ${plantCtx}
 INATURALIST ANIMALS: ${animalCtx}
 
-Return JSON: { "plants": [...6 items], "nativeMedicinals": [...3 items], "wildlife": {...} }
+Return ONLY this JSON structure with NO other text:
+{ "plants": [...6 items], "nativeMedicinals": [...3 items], "wildlife": {...} }
 
-Each plant: { name, latin, emoji, matchScore("High"/"Medium"), roles[], layer, whyThisProperty(1–2 sentences), availability(nursery name or region), availabilityLevel("Common"/"Specialist"), medicinalUse(or null), wildlifeValue(1 sentence), height, rootDepth, yield, maintenanceLevel("None"/"Low"/"Moderate"), guild[2–3 names], systemFit[] }
+Each plant: { "name", "latin", "emoji", "matchScore"("High"/"Medium"), "roles"[], "layer", "whyThisProperty"(1 sentence), "availability"(typical nursery type for this region), "availabilityLevel"("Common"/"Specialist"), "medicinalUse"(or null), "wildlifeValue"(1 sentence), "height", "rootDepth", "yield", "maintenanceLevel"("None"/"Low"/"Moderate"), "guild"[2 names], "systemFit"[] }
 
-Each medicinal: { name, latin, observationNote, medicinalUses(1–2 sentences), cultivationNote, caution(or null) }
+Each medicinal: { "name", "latin", "observationNote", "medicinalUses"(1 sentence), "cultivationNote", "caution"(or null) }
 
-Wildlife: { ecologicalSummary, pollinators[2–3], pestPredators[2–3], browsingAnimals[2–3] }
-Each animal: { emoji, name, latin, observationLevel("High"/"Medium"/"Low"), role, designResponse }
-
-Use web search to check plant availability at nurseries near ${prop.address}.`;
+Wildlife: { "ecologicalSummary", "pollinators"[2], "pestPredators"[2], "browsingAnimals"[2] }
+Each animal: { "emoji", "name", "latin", "observationLevel"("High"/"Medium"/"Low"), "role", "designResponse" }`;
 
   const data = await callAPI({
     model: MODEL,
-    max_tokens: 8000,
-    tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+    max_tokens: 5000,
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
   });
