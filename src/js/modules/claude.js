@@ -106,6 +106,55 @@ Place each at the MOST LOGICAL terrain position. Swales go on the mid-slope cont
   }
 }
 
+// ── JSON recovery helper ───────────────────────────────────────────────
+
+/**
+ * If the API response was truncated mid-JSON, try to salvage what we can.
+ * Finds the opening { of the main object, then walks backward from the
+ * truncation point to find the last complete plant entry and closes the
+ * structure so JSON.parse can succeed.
+ */
+function _salvageJSON(raw) {
+  // Find the outermost opening brace
+  const start = raw.indexOf('{');
+  if (start === -1) return null;
+
+  let str = raw.slice(start);
+
+  // Try progressively shorter strings until we find something parseable
+  // by closing off any open arrays/objects
+  for (let cut = str.length; cut > str.length * 0.3; cut--) {
+    const slice = str.slice(0, cut).trimEnd();
+
+    // Count open braces/brackets to figure out what we need to close
+    let braces = 0, brackets = 0;
+    let inString = false, escape = false;
+    for (const ch of slice) {
+      if (escape) { escape = false; continue; }
+      if (ch === '\\') { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === '{') braces++;
+      else if (ch === '}') braces--;
+      else if (ch === '[') brackets++;
+      else if (ch === ']') brackets--;
+    }
+
+    if (braces < 0 || brackets < 0) continue; // malformed at this cut point
+
+    // Build closing suffix
+    const suffix = ']'.repeat(brackets) + '}'.repeat(braces);
+    try {
+      const result = JSON.parse(slice + suffix);
+      // Only accept if we got at least the plants array with 1+ entries
+      if (result.plants && result.plants.length > 0) return result;
+    } catch {
+      // keep trimming
+    }
+  }
+  return null;
+}
+
 // ── Plant analysis ─────────────────────────────────────────────────────
 
 /**
@@ -150,20 +199,20 @@ SELECTED SYSTEMS: ${systems.join(', ')}
 INATURALIST PLANTS: ${plantCtx}
 INATURALIST ANIMALS: ${animalCtx}
 
-Return JSON: { "plants": [...10 items], "nativeMedicinals": [...4 items], "wildlife": {...} }
+Return JSON: { "plants": [...6 items], "nativeMedicinals": [...3 items], "wildlife": {...} }
 
-Each plant: { name, latin, emoji, matchScore("High"/"Medium"), roles[], layer, whyThisProperty(2–3 sentences specific to this property), availability(where to source locally), availabilityLevel("Common"/"Specialist"), medicinalUse(or null), wildlifeValue(1–2 sentences on local animal support), height, rootDepth, yield, maintenanceLevel("None"/"Low"/"Moderate"), guild[2–4 names], systemFit[] }
+Each plant: { name, latin, emoji, matchScore("High"/"Medium"), roles[], layer, whyThisProperty(1–2 sentences), availability(nursery name or region), availabilityLevel("Common"/"Specialist"), medicinalUse(or null), wildlifeValue(1 sentence), height, rootDepth, yield, maintenanceLevel("None"/"Low"/"Moderate"), guild[2–3 names], systemFit[] }
 
-Each medicinal: { name, latin, observationNote, medicinalUses(2–3 sentences), cultivationNote, caution(or null) }
+Each medicinal: { name, latin, observationNote, medicinalUses(1–2 sentences), cultivationNote, caution(or null) }
 
-Wildlife: { ecologicalSummary, pollinators[3–4], pestPredators[3–4], browsingAnimals[3–4] }
+Wildlife: { ecologicalSummary, pollinators[2–3], pestPredators[2–3], browsingAnimals[2–3] }
 Each animal: { emoji, name, latin, observationLevel("High"/"Medium"/"Low"), role, designResponse }
 
-Use web search to check plant availability at nurseries in ${prop.address}.`;
+Use web search to check plant availability at nurseries near ${prop.address}.`;
 
   const data = await callAPI({
     model: MODEL,
-    max_tokens: 6000,
+    max_tokens: 8000,
     tools: [{ type: 'web_search_20250305', name: 'web_search' }],
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
@@ -181,12 +230,9 @@ Use web search to check plant availability at nurseries in ${prop.address}.`;
   try {
     parsed = JSON.parse(clean);
   } catch {
-    const match = clean.match(/\{[\s\S]*\}/);
-    if (match) {
-      parsed = JSON.parse(match[0]);
-    } else {
-      throw new Error('Could not parse response. Try again.');
-    }
+    // If truncated mid-JSON, try to salvage complete plant objects
+    parsed = _salvageJSON(clean);
+    if (!parsed) throw new Error('Could not parse response — please try again.');
   }
 
   if (!parsed.plants) throw new Error('Unexpected response format from API.');
