@@ -334,7 +334,11 @@ function _animalHTML(a, type, i) {
 function _showError(msg) {
   const c = document.getElementById('errCard');
   if (!c) return;
-  c.innerHTML = `<strong>⚠️ Something went wrong</strong><br><br>${msg}<br><br>Check your API key is valid and has access to Claude Sonnet with web search.`;
+  const isKeyError = msg.toLowerCase().includes('401') || msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('api key') || msg.toLowerCase().includes('authentication');
+  const hint = isKeyError
+    ? 'Check your Anthropic API key is valid and has credits.'
+    : 'This is usually a temporary issue — hit Analyse again to retry.';
+  c.innerHTML = `<strong>⚠️ Something went wrong</strong><br><br>${msg}<br><br>${hint}`;
   c.classList.add('on');
   document.getElementById('plantsEmpty').style.display = 'none';
 }

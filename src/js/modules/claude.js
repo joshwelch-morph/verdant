@@ -89,13 +89,21 @@ Place each at the MOST LOGICAL terrain position. Swales go on the mid-slope cont
 
   const data = await callAPI({
     model: MODEL,
-    max_tokens: 1500,
+    max_tokens: 2500,
     messages: [{ role: 'user', content: prompt }],
   });
 
   const text = data.content?.[0]?.text || '';
-  const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
+  const clean = text.replace(/```json|```/gi, '').trim();
+
+  try {
+    return JSON.parse(clean);
+  } catch {
+    // Response may have been cut off or wrapped — try to extract the array
+    const match = clean.match(/\[[\s\S]*\]/);
+    if (match) return JSON.parse(match[0]);
+    throw new Error('Terrain analysis returned unexpected format. Please try again.');
+  }
 }
 
 // ── Plant analysis ─────────────────────────────────────────────────────
