@@ -45,21 +45,23 @@ function _gaugeArc(pct, r = 38) {
 
 /**
  * Render one radial gauge widget.
+ * The fill path starts invisible (dashoffset = pathLength) and animates
+ * to visible via _animateGauges() after render.
  */
 function _gaugeHTML({ id, emoji, label, value, unit, pct, color, sub }) {
   const { track, fill } = _gaugeArc(pct);
   const strokeW = 7;
   return `
-  <div class="gauge-widget" id="gw-${id}">
+  <div class="gauge-widget" id="gw-${id}" data-pct="${pct}" data-val="${value}" data-unit="${unit}">
     <svg viewBox="0 0 100 100" class="gauge-svg" aria-hidden="true">
       <path class="gauge-track" d="${track}" fill="none" stroke-width="${strokeW}" stroke-linecap="round"/>
-      ${fill ? `<path class="gauge-fill" d="${fill}" fill="none" stroke-width="${strokeW}"
+      ${fill ? `<path class="gauge-fill" id="gf-${id}" d="${fill}" fill="none" stroke-width="${strokeW}"
         stroke-linecap="round" stroke="${color}"
-        style="filter:drop-shadow(0 0 4px ${color}66)"/>` : ''}
+        style="filter:drop-shadow(0 0 4px ${color}66);stroke-dashoffset:1;stroke-dasharray:1"/>` : ''}
     </svg>
     <div class="gauge-inner">
       <div class="gauge-emoji">${emoji}</div>
-      <div class="gauge-val">${value}<span class="gauge-unit">${unit}</span></div>
+      <div class="gauge-val" id="gv-${id}">0<span class="gauge-unit">${unit}</span></div>
     </div>
     <div class="gauge-label">${label}</div>
     ${sub ? `<div class="gauge-sub">${sub}</div>` : ''}
@@ -76,7 +78,7 @@ function _zoneHTML({ emoji, name, pct, color }) {
       <span class="zone-name">${name}</span>
     </div>
     <div class="zone-bar-wrap">
-      <div class="zone-bar-fill" style="width:${pct}%;background:${color}"></div>
+      <div class="zone-bar-fill" data-pct="${pct}" style="width:0%;background:${color}"></div>
     </div>
     <div class="zone-pct">${pct}%</div>
   </div>`;
@@ -127,6 +129,63 @@ function _computeScores() {
     meds:       meds.length,
     systems:    opps.size,
   };
+}
+
+// ── Animation ──────────────────────────────────────────────────────────
+
+/**
+ * Animate gauge arcs, zone bars, and counter numbers after render.
+ * Called via double-rAF so the browser has painted initial state first.
+ */
+function _animateDashboard() {
+  // ── Gauge arc draw-on ──
+  document.querySelectorAll('.gauge-fill').forEach((path, i) => {
+    const len = path.getTotalLength?.() ?? 200;
+    path.style.strokeDasharray = `${len}`;
+    path.style.strokeDashoffset = `${len}`;
+    path.style.transition = 'none';
+    // Stagger each gauge by 120ms
+    setTimeout(() => {
+      path.style.transition = `stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1)`;
+      path.style.strokeDashoffset = '0';
+    }, 80 + i * 120);
+  });
+
+  // ── Zone bar slide-in ──
+  document.querySelectorAll('.zone-bar-fill').forEach((bar, i) => {
+    const targetPct = bar.dataset.pct || 0;
+    bar.style.width = '0%';
+    bar.style.transition = 'none';
+    setTimeout(() => {
+      bar.style.transition = `width 0.9s cubic-bezier(0.4,0,0.2,1)`;
+      bar.style.width = `${targetPct}%`;
+    }, 200 + i * 80);
+  });
+
+  // ── Counter count-up ──
+  document.querySelectorAll('.gauge-widget').forEach((widget, i) => {
+    const valEl = widget.querySelector('.gauge-val');
+    if (!valEl) return;
+    const unit = widget.dataset.unit || '';
+    const rawVal = parseFloat(widget.dataset.val) || 0;
+    // Integer or 1-decimal
+    const isDecimal = String(widget.dataset.val).includes('.');
+    const duration = 900;
+    const startDelay = 80 + i * 120;
+    const startTime = performance.now() + startDelay;
+
+    function tick(now) {
+      const elapsed = Math.max(0, now - startTime);
+      const progress = Math.min(1, elapsed / duration);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = rawVal * eased;
+      const display = isDecimal ? current.toFixed(1) : Math.round(current);
+      valEl.innerHTML = `${display}<span class="gauge-unit">${unit}</span>`;
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
 }
 
 // ── Render ─────────────────────────────────────────────────────────────
@@ -272,7 +331,11 @@ export function renderDashboard() {
       </div>
       <div class="sm-row">
         <div class="sm-icon">🪱</div>
-        <div class="sm-info"><div class="sm-label">Soil Profile</div><div class="sm-val">${prop.soil || '–'}</div></div>
+        <div class="sm-info">
+          <div class="sm-label">Soil Profile</div>
+          <div class="sm-val">${prop.soil || (sp ? 'Fetching…' : '–')}</div>
+          ${sp?.soilGrids?.ph ? `<div class="sm-sub">pH ${sp.soilGrids.ph} · ${sp.soilGrids.clay_pct ?? '–'}% clay · ${sp.soilGrids.soc_gkg ?? '–'}g/kg carbon</div>` : ''}
+        </div>
       </div>
       <div class="sm-row">
         <div class="sm-icon">💧</div>
@@ -282,4 +345,7 @@ export function renderDashboard() {
 
     <div style="height:90px"></div>
   `;
+
+  // Trigger animations after browser has painted the new DOM
+  requestAnimationFrame(() => requestAnimationFrame(_animateDashboard));
 }

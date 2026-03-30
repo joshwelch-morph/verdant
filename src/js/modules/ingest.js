@@ -157,6 +157,68 @@ function _describeRainfall(nasa) {
   return `${desc} — ${mm}mm/yr`;
 }
 
+// ── 4. SoilGrids — global soil properties ─────────────────────────────
+// ISRIC SoilGrids REST API: returns soil properties at 0–30cm depth.
+// Properties: phh2o (pH), soc (organic carbon), clay, sand, silt fractions.
+
+async function fetchSoilGrids(lat, lng) {
+  const props = 'phh2o,soc,clay,sand,silt,bdod';
+  const url = `https://rest.isric.org/soilgrids/v2.0/properties/query?lon=${lng}&lat=${lat}&property=${props.split(',').map(p => `property=${p}`).join('&').replace(/property=/g, '')}&depth=0-30cm&value=mean`;
+  // Correct URL format for SoilGrids v2
+  const soilUrl = `https://rest.isric.org/soilgrids/v2.0/properties/query?lon=${lng}&lat=${lat}&${props.split(',').map(p => `property=${p}`).join('&')}&depth=0-30cm&value=mean`;
+  try {
+    const data = await fetchJSON(soilUrl);
+    const layers = data.properties?.layers;
+    if (!layers?.length) return null;
+
+    // Extract values — SoilGrids returns in d×10 units for most properties
+    const get = (name) => {
+      const layer = layers.find(l => l.name === name);
+      return layer?.depths?.[0]?.values?.mean ?? null;
+    };
+
+    const ph_raw  = get('phh2o');   // pH × 10
+    const soc_raw = get('soc');     // g/kg × 10
+    const clay    = get('clay');    // g/100g × 10 = %×10
+    const sand    = get('sand');
+    const silt    = get('silt');
+    const bd_raw  = get('bdod');    // bulk density cg/cm³
+
+    return {
+      ph:         ph_raw  != null ? (ph_raw / 10).toFixed(1)  : null,
+      soc_gkg:    soc_raw != null ? (soc_raw / 10).toFixed(1) : null,
+      clay_pct:   clay    != null ? Math.round(clay / 10)     : null,
+      sand_pct:   sand    != null ? Math.round(sand / 10)     : null,
+      silt_pct:   silt    != null ? Math.round(silt / 10)     : null,
+      bd_gcm3:    bd_raw  != null ? (bd_raw / 100).toFixed(2) : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Build a human-readable soil description from SoilGrids data */
+function _describeSoil(sg) {
+  if (!sg) return null;
+  const parts = [];
+  // Texture class
+  if (sg.clay_pct != null && sg.sand_pct != null) {
+    const c = sg.clay_pct, s = sg.sand_pct;
+    let texture = '';
+    if (c >= 40) texture = 'Clay';
+    else if (c >= 27 && s <= 45) texture = 'Clay loam';
+    else if (c >= 20 && s >= 45) texture = 'Sandy clay loam';
+    else if (s >= 70) texture = 'Sandy loam';
+    else if (s >= 50) texture = 'Loamy sand';
+    else texture = 'Loam';
+    parts.push(texture);
+  }
+  if (sg.ph)       parts.push(`pH ${sg.ph}`);
+  if (sg.soc_gkg)  parts.push(`${sg.soc_gkg}g/kg organic carbon`);
+  if (sg.clay_pct) parts.push(`${sg.clay_pct}% clay`);
+  return parts.join(' · ') || null;
+}
+
 // ── Solar potential estimate ───────────────────────────────────────────
 
 function _solarKw(nasa, sizeStr) {
@@ -181,12 +243,15 @@ function _solarKw(nasa, sizeStr) {
  * @returns {Promise<object>} siteProfile
  */
 export async function runIngestion(lat, lng) {
-  // Run all fetches in parallel
-  const [elevation, nasa, meteo] = await Promise.all([
+  // Run all fetches in parallel — soil fetch is lower priority, include anyway
+  const [elevation, nasa, meteo, soilGrids] = await Promise.all([
     fetchElevation(lat, lng),
     fetchNASAPower(lat, lng),
     fetchOpenMeteo(lat, lng),
+    fetchSoilGrids(lat, lng),
   ]);
+
+  const soilDesc = _describeSoil(soilGrids);
 
   const siteProfile = {
     lat,
@@ -194,11 +259,13 @@ export async function runIngestion(lat, lng) {
     elevation,
     nasa,
     meteo,
+    soilGrids,
     // Derived strings
     climate:  _describeClimate(nasa, elevation),
     rainfall: _describeRainfall(nasa),
     frost:    _describeFrost(nasa),
     solar_kw: _solarKw(nasa, APP.property.size),
+    soil_desc: soilDesc,
     // Raw numbers for gauges
     rain_mm_year:  nasa?.rain_mm_year  ?? null,
     temp_mean:     nasa?.temp_mean     ?? null,
@@ -212,6 +279,13 @@ export async function runIngestion(lat, lng) {
   APP.property.climate  = siteProfile.climate;
   APP.property.rainfall = siteProfile.rainfall;
   APP.property.frost    = siteProfile.frost;
+  // Enrich soil only if user hasn't entered detailed info already
+  if (soilDesc && !APP.property.soil) {
+    APP.property.soil = soilDesc;
+  } else if (soilDesc) {
+    // Append SoilGrids data as additional context
+    APP.property.soil = APP.property.soil + ` (SoilGrids: ${soilDesc})`;
+  }
 
   // Store full profile for dashboard + report
   APP.siteProfile = siteProfile;

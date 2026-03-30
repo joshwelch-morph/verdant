@@ -783,6 +783,10 @@ function _updateTerrainBadge(tc) {
   document.getElementById('elevRelief').textContent = `Relief: ${tc.relief}m`;
   document.getElementById('elevAspect').textContent = tc.aspect.split('(')[0].trim();
   el.style.display = 'block';
+
+  // Write terrain data into APP.property so dashboard + Claude prompts can use it
+  APP.property.slope  = `${tc.relief}m relief · ${tc.slopeDir.replace('-', ' → ')}`;
+  APP.property.aspect = tc.aspect;
 }
 
 // ── AI loading state ─────────────────────────────────────────────────
