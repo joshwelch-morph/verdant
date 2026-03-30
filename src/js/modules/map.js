@@ -220,6 +220,11 @@ async function _geocodeAddress(address, token) {
       verdantMap.flyTo({ center: [lng, lat], zoom: 18, pitch: 45, bearing: -20, duration: 2500 });
       const badge = document.getElementById('mapPropBadge');
       if (badge) badge.textContent = d.features[0].place_name?.split(',')[0] || address;
+      // Auto-populate iNat coordinate fields with the geocoded location
+      const latEl = document.getElementById('inatLat');
+      const lngEl = document.getElementById('inatLng');
+      if (latEl) latEl.value = lat.toFixed(4);
+      if (lngEl) lngEl.value = lng.toFixed(4);
       setTimeout(() => {
         _placeDefaultBoundary(lng, lat);
         sampleTerrainAndAnalyse(lng, lat);
