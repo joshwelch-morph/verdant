@@ -9,6 +9,7 @@ import { initMap } from './map.js';
 import { renderPlan } from './plan.js';
 import { renderCal } from './calendar.js';
 import { renderReport } from './report.js';
+import { renderDashboard } from './dashboard.js';
 import { initSysRow } from './inat.js';
 
 let currentScreen = 's0';
@@ -42,6 +43,7 @@ export function navTo(id) {
   if (id === 's3') renderPlan();
   if (id === 's4') renderCal('spring');
   if (id === 's5') renderReport();
+  if (id === 's6') renderDashboard();
 
   // Close any open drawer when navigating away from map
   const drawer = document.getElementById('drawer');

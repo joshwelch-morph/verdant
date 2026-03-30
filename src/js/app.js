@@ -21,6 +21,7 @@ import { toast, roleClass, layerEmoji } from './modules/ui.js';
 import { fetchINat, toggleFetchPanel, initSysRow, getSelectedSystems } from './modules/inat.js';
 import { runPlantAnalysis } from './modules/claude.js';
 import { wireSeasonTabs } from './modules/calendar.js';
+import { renderDashboard } from './modules/dashboard.js';
 
 // ── Setup screen ───────────────────────────────────────────────────────
 
@@ -124,6 +125,7 @@ async function runAnalysis() {
     APP.analysisRan = true;
     _renderPlantResults();
     _updatePlantsNavBadge();
+    renderDashboard(); // update gauges with fresh data
   } catch (e) {
     _showError(e.message);
   } finally {
@@ -345,3 +347,9 @@ function _showError(msg) {
 
 // ── Calendar ────────────────────────────────────────────────────────────
 wireSeasonTabs();
+
+// ── Dashboard ────────────────────────────────────────────────────────────
+// Render once on load (pre-analysis placeholder state) and again after analysis
+renderDashboard();
+
+// Dashboard re-renders on nav via nav.js
