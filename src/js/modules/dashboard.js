@@ -106,9 +106,9 @@ function _computeScores() {
   const pollPlants = plants.filter(p => (p.roles || []).some(r => /pollinat/i.test(r))).length;
   const pollinatorRaw = pollinatorCount * 12 + pollPlants * 8;
 
-  // Solar Yield: based on canopy layer plants + selected opps
-  const canopyPlants = plants.filter(p => /canopy|tall/i.test(p.layer || '')).length;
-  const solarKw = parseFloat(APP.property.size) * 1.4 || 5.8;
+  // Solar Yield: use real NASA irradiance if available, else estimate
+  const sp = APP.siteProfile;
+  const solarKw = sp?.solar_kw ?? (parseFloat(APP.property.size) * 1.4 || 5.8);
 
   // Biodiversity (for report card)
   const biodiversityPct = Math.min(100, 20
@@ -137,6 +137,7 @@ export function renderDashboard() {
 
   const s = _computeScores();
   const prop = APP.property;
+  const sp = APP.siteProfile;   // ingestion results (may be null)
   const hasData = APP.analysisRan;
 
   // ── Gauges ──
@@ -144,7 +145,7 @@ export function renderDashboard() {
     { id: 'soil',  ...s.soil,  sub: hasData ? s.soil.sub : 'Run analysis to update' },
     { id: 'water', ...s.water, sub: hasData ? s.water.sub : 'Run analysis to update' },
     { id: 'poll',  ...s.pollinator, sub: hasData ? s.pollinator.sub : 'Run analysis to update' },
-    { id: 'solar', ...s.solar },
+    { id: 'solar', ...s.solar, sub: sp?.solar_kwh_day ? `${sp.solar_kwh_day} kWh/m²/day` : s.solar.sub },
   ];
 
   // ── Property Scan zones ──
@@ -235,16 +236,39 @@ export function renderDashboard() {
     <div class="sec-label" style="margin-top:4px">Site Conditions</div>
     <div class="site-metrics">
       <div class="sm-row">
-        <div class="sm-icon">☀️</div>
-        <div class="sm-info"><div class="sm-label">Sun Exposure</div><div class="sm-val">${prop.slope ? 'Variable — see map' : 'Not analysed yet'}</div></div>
+        <div class="sm-icon">🌡️</div>
+        <div class="sm-info">
+          <div class="sm-label">Climate Zone</div>
+          <div class="sm-val">${sp?.climate || prop.climate || 'Fetching…'}</div>
+        </div>
       </div>
       <div class="sm-row">
         <div class="sm-icon">🌧️</div>
-        <div class="sm-info"><div class="sm-label">Rain Capture Potential</div><div class="sm-val">${prop.rainfall || 'Set property details to estimate'}</div></div>
+        <div class="sm-info">
+          <div class="sm-label">Annual Rainfall</div>
+          <div class="sm-val">${sp?.rainfall || prop.rainfall || 'Fetching…'}${sp?.rain_mm_year ? '' : ''}</div>
+        </div>
+      </div>
+      <div class="sm-row">
+        <div class="sm-icon">❄️</div>
+        <div class="sm-info">
+          <div class="sm-label">Frost</div>
+          <div class="sm-val">${sp?.frost || prop.frost || 'Fetching…'}</div>
+        </div>
+      </div>
+      <div class="sm-row">
+        <div class="sm-icon">☀️</div>
+        <div class="sm-info">
+          <div class="sm-label">Solar Irradiance</div>
+          <div class="sm-val">${sp?.solar_kwh_day ? `${sp.solar_kwh_day} kWh/m²/day` : (prop.slope ? 'Variable — see map' : 'Fetching…')}</div>
+        </div>
       </div>
       <div class="sm-row">
         <div class="sm-icon">📐</div>
-        <div class="sm-info"><div class="sm-label">Slope & Aspect</div><div class="sm-val">${prop.slope || 'Visit the Map to read terrain'}</div></div>
+        <div class="sm-info">
+          <div class="sm-label">Elevation & Slope</div>
+          <div class="sm-val">${sp?.elevation ? `${Math.round(sp.elevation)}m asl` : ''}${prop.slope ? (sp?.elevation ? ' · ' : '') + prop.slope : (!sp?.elevation ? 'Visit the Map to read terrain' : '')}</div>
+        </div>
       </div>
       <div class="sm-row">
         <div class="sm-icon">🪱</div>

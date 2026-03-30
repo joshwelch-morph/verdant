@@ -22,6 +22,7 @@ import { fetchINat, toggleFetchPanel, initSysRow, getSelectedSystems } from './m
 import { runPlantAnalysis } from './modules/claude.js';
 import { wireSeasonTabs } from './modules/calendar.js';
 import { renderDashboard } from './modules/dashboard.js';
+import { runIngestion } from './modules/ingest.js';
 
 // ── Setup screen ───────────────────────────────────────────────────────
 
@@ -58,20 +59,56 @@ function _syncInatCoords() {
   // We don't block on this — it's a nice-to-have prefill
   const token = APP.mapboxToken;
   const addr = APP.property.address;
-  if (!token || !addr) return;
 
-  fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(addr)}.json?access_token=${token}&limit=1`)
+  // If no Mapbox token, try geocoding via Nominatim (free, no key needed)
+  const geocodeUrl = token
+    ? `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(addr)}.json?access_token=${token}&limit=1`
+    : `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`;
+
+  if (!addr) return;
+
+  fetch(geocodeUrl, token ? {} : { headers: { 'Accept-Language': 'en' } })
     .then(r => r.json())
     .then(d => {
-      if (d.features?.length) {
-        const [lng, lat] = d.features[0].center;
-        const latEl = document.getElementById('inatLat');
-        const lngEl = document.getElementById('inatLng');
-        if (latEl) latEl.value = lat.toFixed(4);
-        if (lngEl) lngEl.value = lng.toFixed(4);
+      let lat, lng;
+      if (token && d.features?.length) {
+        [lng, lat] = d.features[0].center;
+      } else if (!token && d.length) {
+        lat = parseFloat(d[0].lat);
+        lng = parseFloat(d[0].lon);
       }
+      if (lat == null || lng == null) return;
+
+      // Prefill iNat coordinate fields
+      const latEl = document.getElementById('inatLat');
+      const lngEl = document.getElementById('inatLng');
+      if (latEl) latEl.value = lat.toFixed(4);
+      if (lngEl) lngEl.value = lng.toFixed(4);
+
+      // Kick off the property ingestion pipeline in the background
+      _startIngestion(lat, lng);
     })
     .catch(() => {}); // silent — fields have sensible defaults
+}
+
+/**
+ * Run the Stage 1 ingestion pipeline and refresh the dashboard when done.
+ */
+async function _startIngestion(lat, lng) {
+  try {
+    _setDashSub('⏳ Fetching climate & soil data…');
+    await runIngestion(lat, lng);
+    _setDashSub('✅ Site data loaded — ' + (APP.siteProfile?.climate || 'see Overview'));
+    renderDashboard(); // refresh with real data
+  } catch (e) {
+    _setDashSub('Your property at a glance');
+    // Silent fail — dashboard still works with user-entered data
+  }
+}
+
+function _setDashSub(text) {
+  const el = document.getElementById('dashSub');
+  if (el) el.textContent = text;
 }
 
 // ── Plants screen ──────────────────────────────────────────────────────

@@ -50,4 +50,8 @@ export const APP = {
 
   // Whether the Claude plant analysis has completed at least once.
   analysisRan: false,
+
+  // ── Site profile (from ingestion pipeline) ───────────────────────────
+  // Populated by ingest.js after geocoding. Null until first ingestion.
+  siteProfile: null,
 };
