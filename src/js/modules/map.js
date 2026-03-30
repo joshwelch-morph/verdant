@@ -169,21 +169,46 @@ function _addBoundaryLayer() {
     type: 'geojson',
     data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [[]] } },
   });
+
+  // Interior fill — very subtle tint
   verdantMap.addLayer({
     id: 'boundary-fill',
     type: 'fill',
     source: 'boundary',
-    paint: { 'fill-color': 'rgba(92,184,50,0.06)', 'fill-opacity': 1 },
+    paint: {
+      'fill-color': 'rgba(221,161,94,0.07)',
+      'fill-opacity': 1,
+    },
   });
+
+  // Outer glow — wide soft line
+  verdantMap.addLayer({
+    id: 'boundary-glow',
+    type: 'line',
+    source: 'boundary',
+    paint: {
+      'line-color': 'rgba(221,161,94,0.25)',
+      'line-width': 10,
+      'line-blur': 6,
+    },
+  });
+
+  // Main parcel line — solid amber/white Zillow-style
   verdantMap.addLayer({
     id: 'boundary-line',
     type: 'line',
     source: 'boundary',
     paint: {
-      'line-color': 'rgba(168,230,100,0.7)',
-      'line-width': 2.5,
-      'line-dasharray': [5, 2],
+      'line-color': '#FFD580',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 14, 1.5, 17, 2.5, 20, 3.5],
+      'line-opacity': 0.92,
     },
+  });
+
+  // Corner accent dots — rendered as a symbol layer on the vertices
+  verdantMap.addSource('boundary-corners', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
   });
 }
 
@@ -226,7 +251,7 @@ async function _geocodeAddress(address, token) {
       if (latEl) latEl.value = lat.toFixed(4);
       if (lngEl) lngEl.value = lng.toFixed(4);
       setTimeout(() => {
-        _placeDefaultBoundary(lng, lat);
+        _fetchAndPlaceParcel(lng, lat);
         sampleTerrainAndAnalyse(lng, lat);
       }, 3000);
     }
@@ -248,7 +273,7 @@ export async function geocodeSearch() {
       verdantMap.flyTo({ center: [lng, lat], zoom: 18, pitch: 45, bearing: -20, duration: 1800 });
       _clearAllMarkers();
       setTimeout(() => {
-        _placeDefaultBoundary(lng, lat);
+        _fetchAndPlaceParcel(lng, lat);
         sampleTerrainAndAnalyse(lng, lat);
       }, 2200);
     }
@@ -473,6 +498,108 @@ function _fallbackPins(tc) {
 
 // ── Boundary drawing ──────────────────────────────────────────────────
 
+/**
+ * Try to fetch a real cadastral/land parcel from OpenStreetMap Overpass API.
+ * Looks for landuse, plot, or farm polygons containing the given point.
+ * Falls back to a default boundary if nothing is found.
+ */
+async function _fetchAndPlaceParcel(lng, lat) {
+  // Overpass QL: find ways/relations tagged as land parcels within ~200m
+  const radius = 200;
+  const query = `
+    [out:json][timeout:10];
+    (
+      way(around:${radius},${lat},${lng})[landuse~"farmland|meadow|grass|orchard|vineyard|residential|allotments|garden"];
+      way(around:${radius},${lat},${lng})[boundary="land_area"];
+      way(around:${radius},${lat},${lng})[place~"farm|allotment"];
+      relation(around:${radius},${lat},${lng})[landuse~"farmland|meadow|grass|orchard"];
+    );
+    out geom;
+  `;
+
+  try {
+    const res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: query,
+    });
+    const data = await res.json();
+
+    if (data.elements?.length) {
+      // Pick the smallest polygon that contains or is closest to the point
+      const ways = data.elements.filter(e => e.type === 'way' && e.geometry?.length >= 3);
+      if (ways.length) {
+        // Sort by area (ascending) — prefer the most specific/smallest parcel
+        ways.sort((a, b) => _approxArea(a.geometry) - _approxArea(b.geometry));
+        const best = ways[0];
+        const coords = best.geometry.map(n => [n.lon, n.lat]);
+        // Close the ring
+        if (coords[0][0] !== coords[coords.length-1][0] || coords[0][1] !== coords[coords.length-1][1]) {
+          coords.push(coords[0]);
+        }
+        _setBoundary(coords);
+        _updateAcreBadge(coords.slice(0, -1));
+        _showParcelBadge('📍 Parcel found via OpenStreetMap');
+        return;
+      }
+    }
+  } catch {
+    // Overpass unavailable — silent fallback
+  }
+
+  // No parcel found — use default boundary
+  _placeDefaultBoundary(lng, lat);
+  _showParcelBadge('✏️ Default boundary — tap draw to edit');
+}
+
+/** Approximate area of an Overpass geometry array */
+function _approxArea(geom) {
+  if (!geom?.length) return Infinity;
+  let area = 0;
+  for (let i = 0; i < geom.length - 1; i++) {
+    area += geom[i].lon * geom[i+1].lat - geom[i+1].lon * geom[i].lat;
+  }
+  return Math.abs(area) / 2;
+}
+
+/** Set the boundary source to a coordinate ring */
+function _setBoundary(coords) {
+  const src = verdantMap.getSource('boundary');
+  if (src) src.setData({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] } });
+  // Update corner dots
+  const cornerSrc = verdantMap.getSource('boundary-corners');
+  if (cornerSrc) {
+    cornerSrc.setData({
+      type: 'FeatureCollection',
+      features: coords.slice(0, -1).map(c => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: c },
+      })),
+    });
+  }
+}
+
+/** Show a small parcel status badge on the map */
+function _showParcelBadge(text) {
+  let badge = document.getElementById('parcelBadge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'parcelBadge';
+    badge.style.cssText = `
+      position:absolute;bottom:160px;left:50%;transform:translateX(-50%);
+      z-index:52;background:rgba(12,20,8,.92);border:1px solid rgba(221,161,94,.45);
+      border-radius:30px;padding:5px 14px;font-size:11px;font-weight:700;
+      color:#FFD580;white-space:nowrap;pointer-events:none;
+      font-family:'Nunito',sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.5);
+    `;
+    document.getElementById('s1').appendChild(badge);
+  }
+  badge.textContent = text;
+  badge.style.display = 'block';
+  // Fade out after 4 seconds
+  setTimeout(() => { if (badge) badge.style.display = 'none'; }, 4000);
+}
+
 function _placeDefaultBoundary(lng, lat) {
   const d = 0.0045;
   const coords = [
@@ -481,9 +608,7 @@ function _placeDefaultBoundary(lng, lat) {
     [lng - d * .1, lat - d * .7], [lng - d * .8, lat - d * .3],
     [lng - d * .6, lat + d * .55],
   ];
-  verdantMap.getSource('boundary').setData({
-    type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] },
-  });
+  _setBoundary(coords);
 }
 
 export function startDrawMode() {
@@ -494,7 +619,7 @@ export function startDrawMode() {
   document.getElementById('mapDrawBanner').style.display = 'flex';
   document.getElementById('mapBoundaryToolbar').style.display = 'none';
   document.getElementById('mapAcreBadge').style.display = 'none';
-  verdantMap.getSource('boundary').setData({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[]] } });
+  _setBoundary([]);
   verdantMap.getCanvas().style.cursor = 'crosshair';
   _clearAllMarkers();
 }
@@ -518,7 +643,7 @@ export function clearBoundary() {
   mapDrawCoords = [];
   mapDrawMarkers.forEach(m => m.remove());
   mapDrawMarkers = [];
-  verdantMap.getSource('boundary').setData({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[]] } });
+  _setBoundary([]);
   document.getElementById('mapBoundaryToolbar').style.display = 'none';
   document.getElementById('mapAcreBadge').style.display = 'none';
 }
@@ -534,9 +659,7 @@ function _onMapClick(e) {
 
   if (mapDrawCoords.length >= 3) {
     const closed = [...mapDrawCoords, mapDrawCoords[0]];
-    verdantMap.getSource('boundary').setData({
-      type: 'Feature', geometry: { type: 'Polygon', coordinates: [closed] },
-    });
+    _setBoundary(closed);
     document.getElementById('mapBoundaryToolbar').style.display = 'flex';
     _updateAcreBadge(mapDrawCoords);
   }
@@ -580,6 +703,7 @@ export function setMapStyle(style, activeBtn) {
 
   verdantMap.once('styledata', () => {
     _add3DTerrain();
+    _addSkyLayer();
     _addContourLayers();
     _addBoundaryLayer();
     _addZoneLayers();
