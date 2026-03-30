@@ -23,6 +23,7 @@ import { runPlantAnalysis } from './modules/claude.js';
 import { wireSeasonTabs } from './modules/calendar.js';
 import { renderDashboard } from './modules/dashboard.js';
 import { runIngestion } from './modules/ingest.js';
+import { invalidateReportCache } from './modules/report.js';
 
 // ── Setup screen ───────────────────────────────────────────────────────
 
@@ -160,6 +161,7 @@ async function runAnalysis() {
     APP.medicinals = result.nativeMedicinals || [];
     APP.wildlife = result.wildlife || {};
     APP.analysisRan = true;
+    invalidateReportCache(); // force narrative to regenerate
     _renderPlantResults();
     _updatePlantsNavBadge();
     renderDashboard(); // update gauges with fresh data

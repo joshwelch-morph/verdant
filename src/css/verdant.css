@@ -1008,6 +1008,10 @@ body {
 /* ══════════════════════════════════════════
    S5 — REPORT
 ══════════════════════════════════════════ */
+
+/* Print header — screen: hidden  |  print: visible */
+.print-header { display: none; }
+
 .report-hero {
   margin: 14px;
   padding: 20px;
@@ -1018,11 +1022,47 @@ body {
 }
 
 .rh-title { font-family: 'Lora', serif; font-size: 19px; margin-bottom: 3px; color: #fff; }
-.rh-sub { font-size: 11px; color: rgba(255,255,255,.75); margin-bottom: 14px; }
-.rh-scores { display: flex; gap: 10px; justify-content: center; }
-.rh-sc { text-align: center; }
-.rh-val { font-size: 22px; font-weight: 800; color: #fff; }
+.rh-sub   { font-size: 11px; color: rgba(255,255,255,.75); margin-bottom: 14px; }
+
+/* Score ring grid */
+.rh-scores { display: flex; gap: 8px; justify-content: center; }
+.rh-sc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 60px;
+}
+.rs-ring { position: relative; }
+.rs-ring svg { display: block; }
+.rs-num {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  margin-top: -2px;
+}
 .rh-lbl { font-size: 10px; color: rgba(255,255,255,.7); }
+
+/* Site conditions strip */
+.report-site-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 14px 4px;
+}
+.rss-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 11px;
+  box-shadow: var(--shadow);
+}
+.rss-icon { font-size: 18px; flex-shrink: 0; }
+.rss-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.rss-val { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3; }
 
 .share-card {
   display: flex;
@@ -1043,6 +1083,113 @@ body {
 .sc-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; color: var(--text); }
 .sc-sub { font-size: 11px; color: var(--muted); }
 .sc-arr { margin-left: auto; color: var(--muted2); font-size: 16px; }
+
+/* Property narrative */
+.report-narrative {
+  margin: 0 14px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 16px;
+  box-shadow: var(--shadow);
+}
+.report-narrative p {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text);
+  margin: 0 0 12px;
+}
+.report-narrative p:last-child { margin-bottom: 0; }
+.report-placeholder {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  padding: 10px 0;
+}
+/* Loading dots animation */
+.report-generating {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+}
+.rg-dot {
+  animation: rg-pulse 1.4s ease-in-out infinite;
+  font-size: 10px;
+  color: var(--primary);
+}
+.rg-dot:nth-child(2) { animation-delay: .2s; }
+.rg-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes rg-pulse {
+  0%, 80%, 100% { opacity: .2; transform: scale(.8); }
+  40%           { opacity: 1;  transform: scale(1.2); }
+}
+
+/* ── Print styles ──────────────────────────────────────────────────────
+   Only the report screen prints. Everything else is hidden.
+   Browser "Save as PDF" from the print dialog will produce a clean doc.
+*/
+@media print {
+  /* Hide everything except the report */
+  body > *:not(#s5) { display: none !important; }
+  #s5 {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    z-index: auto !important;
+    background: #fff !important;
+  }
+  #s5 .topbar  { display: none !important; }
+  #s5 .screen-body {
+    overflow: visible !important;
+    height: auto !important;
+    padding-bottom: 0 !important;
+  }
+  /* Show print header */
+  .print-header {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0 8px;
+    border-bottom: 2px solid #5C7F6E;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .ph-logo { font-weight: 800; color: #5C7F6E; }
+  .ph-date { color: #6B7280; }
+  /* Fix hero for print */
+  .report-hero {
+    background: #3E5C50 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    border-radius: 12px !important;
+    margin: 0 0 14px !important;
+  }
+  /* Site strip full width on print */
+  .report-site-strip {
+    grid-template-columns: repeat(3, 1fr) !important;
+    margin: 0 0 14px !important;
+  }
+  /* Hide export buttons on print */
+  #exportPdf, #exportPlanting, #shareLink, #exportCalendar { display: none !important; }
+  /* Narrative */
+  .report-narrative {
+    margin: 0 !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+  /* Remove bottom spacer */
+  #s5 [style*="height:90px"] { display: none !important; }
+  /* Nav */
+  #appNav { display: none !important; }
+  /* Ensure page breaks sensibly */
+  .report-narrative { page-break-inside: avoid; }
+}
 
 /* ══════════════════════════════════════════
    S6 — DASHBOARD (Eco-System Overview)

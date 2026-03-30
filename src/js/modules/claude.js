@@ -155,6 +155,71 @@ function _salvageJSON(raw) {
   return null;
 }
 
+// ── Report narrative ───────────────────────────────────────────────────
+
+/**
+ * Generate a 3-paragraph narrative summary for the property report.
+ * Uses all ingested + analysed data in APP.
+ *
+ * @returns {Promise<string>} HTML string (three <p> tags)
+ */
+export async function generateReportNarrative() {
+  const prop = APP.property;
+  const sp   = APP.siteProfile;
+  const plants    = APP.plants || [];
+  const meds      = APP.medicinals || [];
+  const wildlife  = APP.wildlife || {};
+  const opps      = [...APP.selectedOpps];
+  const addedPlants = [...APP.addedPlants];
+
+  const soilLine    = sp?.soilGrids ? `pH ${sp.soilGrids.ph}, ${sp.soilGrids.clay_pct}% clay, ${sp.soilGrids.soc_gkg}g/kg organic carbon` : prop.soil || 'unknown';
+  const climateLine = sp?.climate || prop.climate || 'temperate';
+  const rainfallLine = sp?.rainfall || prop.rainfall || 'moderate rainfall';
+  const frostLine   = sp?.frost    || prop.frost    || 'some frost';
+  const solarLine   = sp?.solar_kwh_day ? `${sp.solar_kwh_day} kWh/m²/day solar irradiance` : 'variable solar';
+  const elevLine    = sp?.elevation ? `${Math.round(sp.elevation)}m elevation` : '';
+
+  const prompt = `You are a regenerative land design consultant writing the narrative summary section of a property design report. Write with warmth, expertise and specificity — not generic advice.
+
+PROPERTY: ${prop.name}
+Address: ${prop.address}
+Size: ${prop.size}
+Goals: ${prop.goals.join(', ') || 'regenerative land stewardship'}
+
+SITE CONDITIONS (from real sensor/satellite data):
+- Climate: ${climateLine}
+- Rainfall: ${rainfallLine}
+- Frost: ${frostLine}
+- Solar: ${solarLine}${elevLine ? '\n- Elevation: ' + elevLine : ''}
+- Soil: ${soilLine}
+- Slope/aspect: ${prop.slope || 'gentle'}
+- Water features: ${prop.water || 'none noted'}
+
+DESIGN DECISIONS:
+- Selected systems (${opps.length}): ${opps.join(', ') || 'none yet'}
+- Plants added to plan (${addedPlants.length}): ${addedPlants.slice(0, 8).join(', ') || 'none yet'}${addedPlants.length > 8 ? ' and ' + (addedPlants.length - 8) + ' more' : ''}
+- Total plant recommendations: ${plants.length}
+- Medicinal species identified: ${meds.length}
+- Pollinators nearby: ${(wildlife.pollinators || []).map(p => p.name).join(', ') || 'not yet assessed'}
+
+Write a report narrative in exactly 3 paragraphs:
+1. PROPERTY OVERVIEW — describe this specific site: its climate, soil, terrain and ecological starting point. Reference the actual numbers.
+2. DESIGN STRATEGY — explain the regenerative systems chosen and why they suit this property's specific conditions. Be concrete about the logic.
+3. ECOLOGICAL POTENTIAL — describe the trajectory: what this land can become. Mention specific plants, wildlife and outcomes based on the data.
+
+Each paragraph 60–90 words. Professional but readable. No headers, no bullet points — flowing prose only. Return ONLY the three paragraphs separated by a blank line. No other text.`;
+
+  const data = await callAPI({
+    model: MODEL,
+    max_tokens: 700,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const text = data.content?.[0]?.text?.trim() || '';
+  // Wrap each paragraph in <p>
+  return text.split(/\n\n+/).filter(Boolean).map(p => `<p>${p.trim()}</p>`).join('\n');
+}
+
 // ── Plant analysis ─────────────────────────────────────────────────────
 
 /**

@@ -390,25 +390,41 @@
     <div class="page-sub">Share or save your regenerative design</div>
   </div>
   <div class="screen-body">
+
+    <!-- Print header (hidden on screen, visible on print) -->
+    <div class="print-header">
+      <div class="ph-logo">🌿 Verdant — Regenerative Design Report</div>
+      <div class="ph-date" id="ph-date"></div>
+    </div>
+
+    <!-- Hero scores -->
     <div class="report-hero">
       <div class="rh-title" id="rh-title">Property Report</div>
       <div class="rh-sub" id="rh-sub">Regenerative Design · Generated today</div>
       <div class="rh-scores">
-        <div class="rh-sc"><div class="rh-val" id="rs-w">–</div><div class="rh-lbl">Water security</div></div>
-        <div class="rh-sc"><div class="rh-val" id="rs-b">–</div><div class="rh-lbl">Biodiversity</div></div>
-        <div class="rh-sc"><div class="rh-val" id="rs-s">–</div><div class="rh-lbl">Systems</div></div>
-        <div class="rh-sc"><div class="rh-val" id="rs-p">–</div><div class="rh-lbl">Plants</div></div>
+        <div class="rh-sc" id="rs-w"><div class="rh-lbl">Water</div></div>
+        <div class="rh-sc" id="rs-b"><div class="rh-lbl">Biodiversity</div></div>
+        <div class="rh-sc" id="rs-s"><div class="rh-lbl">Systems</div></div>
+        <div class="rh-sc" id="rs-p"><div class="rh-lbl">Plants</div></div>
       </div>
     </div>
+
+    <!-- Site conditions strip -->
+    <div class="sec-label">Site Conditions</div>
+    <div class="report-site-strip" id="reportSiteStrip">
+      <!-- populated by report.js -->
+    </div>
+
+    <!-- Export & Share -->
     <div class="sec-label">Export & Share</div>
     <div class="share-card" id="exportPdf">
       <div class="sc-ico" style="background:rgba(212,148,26,.14)">📄</div>
-      <div><div class="sc-title">Download Full PDF Report</div><div class="sc-sub">Complete design plan, plant list & specifications</div></div>
+      <div><div class="sc-title">Print / Save as PDF</div><div class="sc-sub">Use your browser's Print dialog — save as PDF</div></div>
       <div class="sc-arr">›</div>
     </div>
     <div class="share-card" id="exportPlanting">
       <div class="sc-ico" style="background:rgba(85,176,37,.12)">🌿</div>
-      <div><div class="sc-title">Export Planting Plan</div><div class="sc-sub">Species list with quantities, spacing & timing</div></div>
+      <div><div class="sc-title">Export Planting Plan CSV</div><div class="sc-sub">Species list with spacing, yield & maintenance info</div></div>
       <div class="sc-arr">›</div>
     </div>
     <div class="share-card" id="shareLink">
@@ -421,10 +437,13 @@
       <div><div class="sc-title">Export Maintenance Calendar</div><div class="sc-sub">Year 1–5 task schedule as spreadsheet</div></div>
       <div class="sc-arr">›</div>
     </div>
-    <div class="sec-label">Property Summary</div>
-    <div class="card" style="margin:0 14px;font-size:13px;line-height:1.8;" id="reportSummary">
-      Run the plant analysis to generate your full report summary.
+
+    <!-- Property narrative -->
+    <div class="sec-label">Property Narrative</div>
+    <div class="report-narrative" id="reportSummary">
+      <!-- populated by report.js -->
     </div>
+
     <div style="height:90px"></div>
   </div>
 </div>
