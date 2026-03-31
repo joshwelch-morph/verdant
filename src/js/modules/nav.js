@@ -7,7 +7,7 @@
 
 import { initMap } from './map.js';
 import { renderPlan } from './plan.js';
-import { renderCal } from './calendar.js';
+import { renderCal, activateCurrentSeasonTab } from './calendar.js';
 import { renderReport } from './report.js';
 import { renderDashboard } from './dashboard.js';
 import { initSysRow } from './inat.js';
@@ -49,7 +49,7 @@ export function navTo(id) {
   if (id === 's1') initMap();
   if (id === 's2') initSysRow();
   if (id === 's3') renderPlan();
-  if (id === 's4') renderCal('spring');
+  if (id === 's4') activateCurrentSeasonTab();
   if (id === 's5') renderReport();
   if (id === 's6') renderDashboard();
 
