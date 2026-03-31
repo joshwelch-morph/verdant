@@ -140,8 +140,10 @@ function _renderSiteStrip(sp, p, s) {
   if (!el) return;
   const items = [
     { icon: '🌡️', label: 'Climate',   val: sp?.climate  || p.climate  || '–' },
+    { icon: '🌿',  label: 'Hardiness', val: p.hardiness || (sp?.hardiness?.zone ? `Zone ${sp.hardiness.zone}` : '–') },
     { icon: '🌧️', label: 'Rainfall',  val: sp?.rainfall || p.rainfall || '–' },
     { icon: '❄️',  label: 'Frost',     val: sp?.frost    || p.frost    || '–' },
+    { icon: '💧',  label: 'Root Zone', val: sp?.water_balance || (sp?.gwetroot != null ? `${sp.gwetroot} wetness` : '–') },
     { icon: '☀️',  label: 'Solar',     val: sp?.solar_kwh_day ? `${sp.solar_kwh_day} kWh/m²/d` : '–' },
     { icon: '🪱',  label: 'Soil',      val: p.soil || sp?.soil_desc || '–' },
     { icon: '📐',  label: 'Elevation', val: sp?.elevation ? `${Math.round(sp.elevation)}m asl` : (p.slope || '–') },

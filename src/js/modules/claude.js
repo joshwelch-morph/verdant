@@ -250,13 +250,25 @@ export async function runPlantAnalysis(systems) {
 
   const systemPrompt = `You are an expert permaculture designer, plant ecologist, herbalist, and wildlife ecologist. Respond ONLY with valid JSON — no markdown fences, no preamble, no explanation before or after the JSON.`;
 
+  // Pull Stage 2 data from siteProfile if available
+  const sp = APP.siteProfile;
+  const hardinessLine = prop.hardiness || (sp?.hardiness?.zone ? `Zone ${sp.hardiness.zone}` : 'unknown');
+  const waterLine = sp?.water_balance || 'unknown';
+  const windLine  = sp?.wind_ms    != null ? `${sp.wind_ms} m/s avg wind` : '';
+  const nitrogenLine = sp?.soilGrids?.nitrogen_gkg ? `${sp.soilGrids.nitrogen_gkg}g/kg` : '';
+  const cecLine = sp?.soilGrids?.cec_cmol ? `${sp.soilGrids.cec_cmol} cmol/kg CEC` : '';
+  const droughtLine = sp?.drought_months?.length
+    ? `${sp.drought_months.length} drought-risk months`
+    : 'no seasonal drought';
+
   const userPrompt = `Analyse this property and return plant recommendations, native medicinals, and a wildlife overview.
 
 PROPERTY: ${prop.name} | ${prop.address} | ${prop.size}
 Climate: ${prop.climate || 'temperate'} | Rainfall: ${prop.rainfall || 'unknown'}
-Soil: ${prop.soil} | Slope: ${prop.slope || 'gentle'}
-Water: ${prop.water} | Frost: ${prop.frost || 'light'}
-Existing: ${prop.existing || 'pasture'} | Hardiness: ${prop.hardiness || 'temperate'}
+Hardiness: ${hardinessLine} | Frost: ${prop.frost || 'light'}
+Soil: ${prop.soil} | Slope: ${prop.slope || 'gentle'}${nitrogenLine ? `\nSoil nitrogen: ${nitrogenLine}` : ''}${cecLine ? ` | ${cecLine}` : ''}
+Root zone: ${waterLine} | Seasonal water: ${droughtLine}${windLine ? `\nWind: ${windLine}` : ''}
+Water features: ${prop.water} | Existing: ${prop.existing || 'pasture'}
 Hemisphere: ${prop.address.match(/australia|new zealand|south africa|argentina|chile|brazil/i) ? 'Southern — north-facing slopes get more sun' : 'Northern — south-facing slopes get more sun'}
 Goals: ${prop.goals.join(', ')}
 SELECTED SYSTEMS: ${systems.join(', ')}

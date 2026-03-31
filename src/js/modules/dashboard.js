@@ -299,13 +299,15 @@ export function renderDashboard() {
         <div class="sm-info">
           <div class="sm-label">Climate Zone</div>
           <div class="sm-val">${sp?.climate || prop.climate || 'Fetching…'}</div>
+          ${sp?.hardiness?.zone ? `<div class="sm-sub">Hardiness Zone ${sp.hardiness.zone}${sp.hardiness.source === 'USDA' ? ' (USDA)' : ' (est.)'}</div>` : (prop.hardiness ? `<div class="sm-sub">${prop.hardiness}</div>` : '')}
         </div>
       </div>
       <div class="sm-row">
         <div class="sm-icon">🌧️</div>
         <div class="sm-info">
-          <div class="sm-label">Annual Rainfall</div>
-          <div class="sm-val">${sp?.rainfall || prop.rainfall || 'Fetching…'}${sp?.rain_mm_year ? '' : ''}</div>
+          <div class="sm-label">Rainfall &amp; Humidity</div>
+          <div class="sm-val">${sp?.rainfall || prop.rainfall || 'Fetching…'}</div>
+          ${sp?.humidity_pct != null ? `<div class="sm-sub">${sp.humidity_pct}% avg humidity</div>` : ''}
         </div>
       </div>
       <div class="sm-row">
@@ -316,16 +318,25 @@ export function renderDashboard() {
         </div>
       </div>
       <div class="sm-row">
+        <div class="sm-icon">💧</div>
+        <div class="sm-info">
+          <div class="sm-label">Root Zone Moisture</div>
+          <div class="sm-val">${sp?.water_balance || (sp?.gwetroot != null ? `${sp.gwetroot} root zone wetness` : (prop.water || 'Fetching…'))}</div>
+          ${sp?.drought_months?.length ? `<div class="sm-sub">Drought risk: ${sp.drought_months.length} months</div>` : ''}
+        </div>
+      </div>
+      <div class="sm-row">
         <div class="sm-icon">☀️</div>
         <div class="sm-info">
-          <div class="sm-label">Solar Irradiance</div>
+          <div class="sm-label">Solar &amp; Wind</div>
           <div class="sm-val">${sp?.solar_kwh_day ? `${sp.solar_kwh_day} kWh/m²/day` : (prop.slope ? 'Variable — see map' : 'Fetching…')}</div>
+          ${sp?.wind_ms != null ? `<div class="sm-sub">${sp.wind_ms} m/s avg wind · ${sp.cloud_pct ?? '–'}% cloud cover</div>` : ''}
         </div>
       </div>
       <div class="sm-row">
         <div class="sm-icon">📐</div>
         <div class="sm-info">
-          <div class="sm-label">Elevation & Slope</div>
+          <div class="sm-label">Elevation &amp; Slope</div>
           <div class="sm-val">${sp?.elevation ? `${Math.round(sp.elevation)}m asl` : ''}${prop.slope ? (sp?.elevation ? ' · ' : '') + prop.slope : (!sp?.elevation ? 'Visit the Map to read terrain' : '')}</div>
         </div>
       </div>
@@ -334,12 +345,8 @@ export function renderDashboard() {
         <div class="sm-info">
           <div class="sm-label">Soil Profile</div>
           <div class="sm-val">${prop.soil || (sp ? 'Fetching…' : '–')}</div>
-          ${sp?.soilGrids?.ph ? `<div class="sm-sub">pH ${sp.soilGrids.ph} · ${sp.soilGrids.clay_pct ?? '–'}% clay · ${sp.soilGrids.soc_gkg ?? '–'}g/kg carbon</div>` : ''}
+          ${sp?.soilGrids?.ph ? `<div class="sm-sub">pH ${sp.soilGrids.ph} · ${sp.soilGrids.clay_pct ?? '–'}% clay · ${sp.soilGrids.soc_gkg ?? '–'}g/kg SOC${sp.soilGrids.nitrogen_gkg ? ` · ${sp.soilGrids.nitrogen_gkg}g/kg N` : ''}${sp.soilGrids.cec_cmol ? ` · CEC ${sp.soilGrids.cec_cmol}` : ''}</div>` : ''}
         </div>
-      </div>
-      <div class="sm-row">
-        <div class="sm-icon">💧</div>
-        <div class="sm-info"><div class="sm-label">Water Features</div><div class="sm-val">${prop.water || '–'}</div></div>
       </div>
     </div>
 
