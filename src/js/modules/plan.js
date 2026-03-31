@@ -13,6 +13,7 @@
  */
 
 import { APP } from './state.js';
+import { openBrowser } from './plantbrowser.js';
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -246,6 +247,12 @@ export function renderPlan() {
   document.getElementById('dp-stat-guilds')  && (document.getElementById('dp-stat-guilds').textContent  = guildCount);
   document.getElementById('dp-stat-layers')  && (document.getElementById('dp-stat-layers').textContent  = hasData ? [...new Set(plants.map(p => p.layer).filter(Boolean))].length : '–');
 
+  // ── Browse Plants button (always visible) ──
+  const zoneStr = APP.siteProfile?.hardiness?.zone
+    ? `Zone ${APP.siteProfile.hardiness.zone}`
+    : APP.property?.hardiness || null;
+  const zoneLabel = zoneStr ? ` · ${zoneStr}` : '';
+
   // ── Placeholder when no analysis ──
   if (!hasData) {
     container.innerHTML = `
@@ -253,12 +260,19 @@ export function renderPlan() {
         <div class="dpp-ico">🗺️</div>
         <div class="dpp-title">Your design plan will appear here</div>
         <div class="dpp-sub">Run <strong>Analyse My Land</strong> on the Plants screen to generate your personalised guild plantings, companion pairings, and system checklist.</div>
+      </div>
+      <div class="pb-launch-wrap">
+        <button class="pb-launch-btn" id="pb-launch-btn">
+          🌿 Browse &amp; Add Plants
+          <span class="pb-launch-sub">Search 80+ nursery plants rated for your site${zoneLabel}</span>
+        </button>
       </div>`;
     // Still show systems checklist if any selected
     if (systemCount) {
       container.innerHTML += `<div class="sec-label" style="margin-top:4px">Selected Systems</div>
         <div style="padding:0 14px">${_systemChecklistHTML(selectedOpps)}</div>`;
     }
+    _wireBrowseBtn();
     return;
   }
 
@@ -266,6 +280,14 @@ export function renderPlan() {
   const guilds = _buildGuilds(plants);
 
   container.innerHTML = `
+
+    <!-- Browse Plants button -->
+    <div class="pb-launch-wrap">
+      <button class="pb-launch-btn" id="pb-launch-btn">
+        🌿 Browse &amp; Add Plants
+        <span class="pb-launch-sub">Search 80+ nursery plants rated for your site${zoneLabel}</span>
+      </button>
+    </div>
 
     <!-- Layer diversity bar chart -->
     <div class="sec-label">Forest Layer Diversity</div>
@@ -311,6 +333,21 @@ export function renderPlan() {
         const done = item.classList.toggle('done');
         check.textContent = done ? '✓' : '○';
       }
+    });
+  });
+
+  _wireBrowseBtn();
+}
+
+// ── Browse button wiring ─────────────────────────────────────────────────────
+function _wireBrowseBtn() {
+  const btn = document.getElementById('pb-launch-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    openBrowser(plant => {
+      // When a plant is added from the browser, re-render the plan
+      // so the "Your Planting Plan" section updates
+      renderPlan();
     });
   });
 }

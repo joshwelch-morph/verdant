@@ -2202,3 +2202,330 @@ body {
   /* Gauge widget padding */
   .gauge-widget { padding: 10px 8px 7px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PLANT BROWSER — overlay, drawer, cards, suitability badges
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Launch button on Design screen ─────────────────────────────────────── */
+.pb-launch-wrap {
+  padding: 12px 14px 4px;
+}
+.pb-launch-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(78,140,96,.13), rgba(92,127,110,.08));
+  border: 1.5px solid rgba(78,140,96,.35);
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2d5a3d;
+  text-align: left;
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.pb-launch-btn:hover {
+  background: linear-gradient(135deg, rgba(78,140,96,.22), rgba(92,127,110,.14));
+  border-color: rgba(78,140,96,.55);
+  transform: translateY(-1px);
+}
+.pb-launch-sub {
+  font-size: 11px;
+  font-weight: 500;
+  color: #5c7f6e;
+  opacity: .85;
+}
+
+/* ── Overlay backdrop ────────────────────────────────────────────────────── */
+.pb-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 900;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* ── Drawer panel ────────────────────────────────────────────────────────── */
+.pb-drawer {
+  width: 100%;
+  max-width: 480px;
+  max-height: 92vh;
+  background: #f6f4ee;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -4px 32px rgba(0,0,0,.18);
+  animation: pb-slide-up .25s cubic-bezier(.22,.61,.36,1);
+}
+@keyframes pb-slide-up {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Drawer header ───────────────────────────────────────────────────────── */
+.pb-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 10px;
+  border-bottom: 1px solid rgba(0,0,0,.07);
+  flex-shrink: 0;
+}
+.pb-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pb-drawer-ico {
+  font-size: 26px;
+  line-height: 1;
+}
+.pb-drawer-h {
+  font-size: 17px;
+  font-weight: 800;
+  color: #2d3b2e;
+}
+.pb-drawer-sub {
+  font-size: 11px;
+  color: #7a8c7b;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pb-zone-chip {
+  display: inline-block;
+  padding: 1px 7px;
+  background: rgba(78,140,96,.12);
+  border: 1px solid rgba(78,140,96,.25);
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #3a6b4a;
+}
+.pb-zone-missing {
+  background: rgba(180,140,60,.1);
+  border-color: rgba(180,140,60,.25);
+  color: #8a6020;
+}
+.pb-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,.08);
+  color: #555;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pb-close-btn:hover { background: rgba(0,0,0,.14); }
+
+/* ── Search + category controls ──────────────────────────────────────────── */
+.pb-controls {
+  padding: 10px 14px 6px;
+  flex-shrink: 0;
+}
+.pb-search {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(0,0,0,.12);
+  background: #fff;
+  font-size: 14px;
+  color: #2d3b2e;
+  outline: none;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+.pb-search:focus { border-color: rgba(78,140,96,.5); }
+.pb-cats {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.pb-cats::-webkit-scrollbar { display: none; }
+.pb-cat-btn {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 99px;
+  border: 1.5px solid rgba(0,0,0,.12);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5c7f6e;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.pb-cat-btn:hover { background: rgba(78,140,96,.08); }
+.pb-cat-active {
+  background: #3d6b47 !important;
+  border-color: #3d6b47 !important;
+  color: #fff !important;
+}
+
+/* ── Results count ───────────────────────────────────────────────────────── */
+.pb-results-count {
+  padding: 2px 16px 6px;
+  font-size: 11px;
+  color: #8a9e8b;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* ── Plant grid ──────────────────────────────────────────────────────────── */
+.pb-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 14px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+.pb-empty {
+  padding: 32px 0;
+  text-align: center;
+  color: #8a9e8b;
+  font-size: 14px;
+}
+
+/* ── Plant card ──────────────────────────────────────────────────────────── */
+.pb-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 14px 10px;
+  border: 1.5px solid rgba(0,0,0,.07);
+  transition: border-color .15s;
+}
+.pb-card:hover { border-color: rgba(78,140,96,.25); }
+.pb-card-added { border-color: rgba(78,140,96,.4) !important; background: rgba(78,140,96,.04); }
+
+/* Suitability left-border accent */
+.pb-suit-great    { border-left: 4px solid #4ea860; }
+.pb-suit-marginal { border-left: 4px solid #c8923a; }
+.pb-suit-poor     { border-left: 4px solid #c84848; }
+
+.pb-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.pb-emoji {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.pb-card-info { flex: 1; min-width: 0; }
+.pb-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2d3b2e;
+  line-height: 1.2;
+}
+.pb-card-latin {
+  font-size: 11px;
+  color: #8a9e8b;
+  font-style: italic;
+  margin-top: 1px;
+}
+.pb-badge-wrap { flex-shrink: 0; }
+
+/* ── Suitability badges ──────────────────────────────────────────────────── */
+.pb-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pb-badge-great    { background: rgba(78,168,96,.12);  color: #2d6b3c; border: 1px solid rgba(78,168,96,.3);  }
+.pb-badge-marginal { background: rgba(200,146,58,.12); color: #7a4e12; border: 1px solid rgba(200,146,58,.3); }
+.pb-badge-poor     { background: rgba(200,72,72,.1);   color: #8a2020; border: 1px solid rgba(200,72,72,.25); }
+
+/* ── Role chips ──────────────────────────────────────────────────────────── */
+.pb-card-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 7px;
+}
+.pb-role {
+  padding: 2px 7px;
+  background: rgba(78,140,96,.08);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #3d6b47;
+  text-transform: capitalize;
+}
+
+/* ── Meta row ────────────────────────────────────────────────────────────── */
+.pb-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: #7a8c7b;
+}
+
+/* ── Notes ───────────────────────────────────────────────────────────────── */
+.pb-card-notes {
+  font-size: 11.5px;
+  color: #5c6e5d;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+/* ── Suitability reason notes ────────────────────────────────────────────── */
+.pb-suit-notes {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 7px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.pb-suit-notes-great    { background: rgba(78,168,96,.09);  color: #2d6b3c; }
+.pb-suit-notes-marginal { background: rgba(200,146,58,.1);  color: #7a4e12; }
+.pb-suit-notes-poor     { background: rgba(200,72,72,.09);  color: #8a2020; }
+
+/* ── Add to plan button ──────────────────────────────────────────────────── */
+.pb-add-btn {
+  width: 100%;
+  padding: 9px 0;
+  border-radius: 10px;
+  border: 1.5px solid rgba(78,140,96,.35);
+  background: rgba(78,140,96,.08);
+  color: #2d5a3d;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.pb-add-btn:hover {
+  background: rgba(78,140,96,.18);
+  border-color: rgba(78,140,96,.55);
+}
+.pb-add-btn-added {
+  background: #3d6b47 !important;
+  border-color: #3d6b47 !important;
+  color: #fff !important;
+}
