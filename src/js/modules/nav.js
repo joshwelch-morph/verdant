@@ -10,7 +10,7 @@ import { renderPlan } from './plan.js';
 import { renderCal, activateCurrentSeasonTab } from './calendar.js';
 import { renderReport } from './report.js';
 import { renderDashboard } from './dashboard.js';
-import { initSysRow } from './inat.js';
+import { initSysRow, restoreInatSummary } from './inat.js';
 import { setPersistedScreen } from './persist.js';
 import { markScreenSeen } from './tour.js';
 
@@ -47,7 +47,7 @@ export function navTo(id) {
 
   // Screen-specific init
   if (id === 's1') initMap();
-  if (id === 's2') initSysRow();
+  if (id === 's2') { initSysRow(); restoreInatSummary(); }
   if (id === 's3') renderPlan();
   if (id === 's4') activateCurrentSeasonTab();
   if (id === 's5') renderReport();
