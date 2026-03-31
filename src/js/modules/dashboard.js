@@ -4,6 +4,12 @@
  *
  * Renders four radial gauges, a property-scan panel with zone bars,
  * and a site-metrics strip. Reads from APP after plant analysis runs.
+ *
+ * Stage 3 enrichments:
+ *   - Risk callout strip (drought + frost) shown prominently above gauges
+ *   - Solar gauge sub shows peak/low month from NASA POWER
+ *   - Pollinator gauge sub falls back to GBIF animal count
+ *   - Design overview row gains growing-season months + GBIF biodiversity stat
  */
 
 import { APP } from './state.js';
@@ -113,6 +119,18 @@ function _computeScores() {
   const sp = APP.siteProfile;
   const solarKw = sp?.solar_kw ?? (parseFloat(APP.property.size) * 1.4 || 5.8);
 
+  // Stage 3 — solar gauge sub-text: show peak/low month if available
+  let solarSub = 'est. peak capture';
+  if (sp?.solar_kwh_day) solarSub = `${sp.solar_kwh_day} kWh/m²/day`;
+  if (sp?.solar_peak_month && sp?.solar_low_month) {
+    solarSub = `Peak ${sp.solar_peak_month} · Low ${sp.solar_low_month}`;
+  }
+
+  // Stage 3 — pollinator gauge sub-text: prefer iNat count, fall back to GBIF
+  const pollinatorSub = pollinatorCount > 0
+    ? `${pollinatorCount} species nearby`
+    : (sp?.gbif_animal_count != null ? `${sp.gbif_animal_count.toLocaleString()} animals (GBIF)` : 'Add iNat data to populate');
+
   // Biodiversity (for report card)
   const biodiversityPct = Math.min(100, 20
     + plants.length * 4
@@ -123,8 +141,8 @@ function _computeScores() {
   return {
     soil:       { pct: soilPct,       value: soilPct,        unit: '%',   label: 'Soil Health',       emoji: '🪱', color: '#7EB67A', sub: layers.length ? `${layers.length} plant layers` : 'Add plants to improve' },
     water:      { pct: waterPct,      value: waterPct,       unit: '%',   label: 'Water Retention',   emoji: '💧', color: '#5BA3C9', sub: `${waterOpps} water systems` },
-    pollinator: { pct: Math.min(1, pollinatorRaw / 200), value: pollinatorCount * 12 + pollPlants * 8, unit: '', label: 'Pollinator Activity', emoji: '🌸', color: '#DDA15E', sub: `${pollinatorCount} species nearby` },
-    solar:      { pct: Math.min(1, solarKw / 12),  value: solarKw.toFixed(1), unit: 'kW', label: 'Solar Potential', emoji: '☀️', color: '#E8A830', sub: `est. peak capture` },
+    pollinator: { pct: Math.min(1, pollinatorRaw / 200), value: pollinatorCount * 12 + pollPlants * 8, unit: '', label: 'Pollinator Activity', emoji: '🌸', color: '#DDA15E', sub: pollinatorSub },
+    solar:      { pct: Math.min(1, solarKw / 12),  value: solarKw.toFixed(1), unit: 'kW', label: 'Solar Potential', emoji: '☀️', color: '#E8A830', sub: solarSub },
     biodiversity: biodiversityPct,
     plants:     plants.length,
     meds:       meds.length,
@@ -221,6 +239,21 @@ export function renderDashboard() {
   const plantsDisplay = hasData ? s.plants : '–';
   const systemsDisplay = hasData ? (s.systems || '–') : '–';
 
+  // ── Stage 3 risk callouts ──
+  const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const droughtRisk = sp?.drought_months?.length
+    ? sp.drought_months.map(m => MONTH_SHORT[m - 1]).join(', ')
+    : null;
+  const frostRisk = sp?.frost_months?.length
+    ? sp.frost_months.map(m => MONTH_SHORT[m - 1]).join(', ')
+    : null;
+
+  // Growing season stat for design overview
+  const growingDisplay = sp?.growing_months?.length ? `${sp.growing_months.length} mo` : '–';
+  // GBIF total species for design overview
+  const gbifTotal = (sp?.gbif_plant_count ?? 0) + (sp?.gbif_animal_count ?? 0);
+  const gbifDisplay = gbifTotal > 0 ? gbifTotal.toLocaleString() : '–';
+
   container.innerHTML = `
 
     <!-- Property Scan Panel -->
@@ -271,6 +304,19 @@ export function renderDashboard() {
       <div class="dn-text">Run <strong>Analyse My Land</strong> on the Plants screen to populate your gauges with real data.</div>
     </div>` : ''}
 
+    ${(droughtRisk || frostRisk) ? `
+    <!-- Risk callouts -->
+    <div class="dash-risk-strip">
+      ${droughtRisk ? `<div class="drs-card drs-drought">
+        <span class="drs-ico">🏜️</span>
+        <div><div class="drs-label">Drought risk months</div><div class="drs-val">${droughtRisk}</div></div>
+      </div>` : ''}
+      ${frostRisk ? `<div class="drs-card drs-frost">
+        <span class="drs-ico">🧊</span>
+        <div><div class="drs-label">Frost risk months</div><div class="drs-val">${frostRisk}</div></div>
+      </div>` : ''}
+    </div>` : ''}
+
     <!-- Report Summary Row -->
     <div class="sec-label" style="margin-top:4px">Design Overview</div>
     <div class="dash-overview">
@@ -291,6 +337,27 @@ export function renderDashboard() {
         <div class="do-l">Systems active</div>
       </div>
     </div>
+
+    <!-- Stage 3 stats row -->
+    ${(growingDisplay !== '–' || gbifDisplay !== '–') ? `
+    <div class="dash-overview dash-overview-s3">
+      <div class="do-cell">
+        <div class="do-v do-v-green">${growingDisplay}</div>
+        <div class="do-l">Growing season</div>
+      </div>
+      <div class="do-cell">
+        <div class="do-v do-v-blue">${gbifDisplay}</div>
+        <div class="do-l">Local species (GBIF)</div>
+      </div>
+      ${sp?.solar_peak_month ? `<div class="do-cell">
+        <div class="do-v do-v-gold">${sp.solar_peak_month}</div>
+        <div class="do-l">Best solar month</div>
+      </div>` : '<div class="do-cell"><div class="do-v">–</div><div class="do-l">Best solar month</div></div>'}
+      <div class="do-cell">
+        <div class="do-v">${sp?.land_use_summary ? '✓' : '–'}</div>
+        <div class="do-l">Land context</div>
+      </div>
+    </div>` : ''}
 
     <!-- Site Metrics -->
     <div class="sec-label" style="margin-top:4px">Site Conditions</div>
