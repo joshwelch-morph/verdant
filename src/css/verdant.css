@@ -1814,6 +1814,34 @@ body {
 }
 .rb-clear:hover { color: var(--red); }
 
+/* ── Shared view banner ─────────────────────────────────────────────── */
+.shared-view-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 14px 0;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(43,151,181,.12), rgba(92,127,110,.08));
+  border: 1px solid rgba(43,151,181,.30);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(43,151,181,.1);
+}
+.svb-ico { font-size: 18px; flex-shrink: 0; }
+.svb-body { flex: 1; }
+.svb-title { font-size: 12px; font-weight: 800; color: #2b97b5; line-height: 1.2; }
+.svb-sub   { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.svb-close {
+  background: none;
+  border: none;
+  color: var(--muted2);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+.svb-close:hover { color: var(--text); background: rgba(0,0,0,.05); }
+
 /* ── Dashboard session footer ───────────────────────────────────────── */
 .dash-session-footer {
   display: flex;

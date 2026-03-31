@@ -27,6 +27,86 @@ import { invalidateReportCache } from './modules/report.js';
 import { saveState, loadState, clearState, hasSavedState, getSavedScreen, getSavedAt } from './modules/persist.js';
 import { initTour } from './modules/tour.js';
 
+// ── Share link receiver ────────────────────────────────────────────────
+//
+// Detects ?share= in the URL, decodes the base64 snapshot written by
+// report.js _exportShareLink(), populates APP state, and launches
+// straight into the Report screen in read-only "shared view" mode.
+
+(function _bootShareReceiver() {
+  const params = new URLSearchParams(location.search);
+  const b64 = params.get('share');
+  if (!b64) return;
+
+  try {
+    const json = decodeURIComponent(escape(atob(b64)));
+    const snap = JSON.parse(json);
+    if (!snap || snap.v !== 1) return; // unknown schema version
+
+    // Populate APP state from the snapshot
+    if (snap.property)      Object.assign(APP.property, snap.property);
+    if (snap.selectedOpps)  APP.selectedOpps = new Set(snap.selectedOpps);
+    if (snap.addedPlants)   APP.addedPlants  = new Set(snap.addedPlants);
+    if (snap.siteProfile)   APP.siteProfile  = snap.siteProfile;
+    if (snap.plants)        APP.plants       = snap.plants;
+    if (snap.medicinals)    APP.medicinals   = snap.medicinals;
+    if (snap.scores?.plants != null) APP.analysisRan = true;
+
+    // Restore API key from any existing saved session (user needs theirs to regenerate narrative)
+    try {
+      const saved = JSON.parse(localStorage.getItem('verdant_v1') || 'null');
+      if (saved?.apiKey) APP.apiKey = saved.apiKey;
+    } catch { /* silent */ }
+
+    // Show the shared design immediately — skip setup screen
+    const s0 = document.getElementById('s0');
+    if (s0) s0.classList.remove('active');
+
+    showNav();
+
+    // Show a "Viewing shared design" banner
+    _showSharedBanner(snap);
+
+    // Navigate to Report screen so the recipient sees the full design
+    navTo('s5');
+
+    // Also render dashboard with the snapshot data
+    renderDashboard();
+
+    // Strip the ?share= param from the URL so refreshing doesn't re-apply
+    const cleanUrl = location.pathname;
+    history.replaceState(null, '', cleanUrl);
+
+  } catch (e) {
+    // Malformed share link — fall through to normal boot
+    console.warn('[Verdant] Could not decode share link:', e);
+  }
+})();
+
+function _showSharedBanner(snap) {
+  const container = document.getElementById('s5');
+  if (!container) return;
+
+  const name   = snap.property?.name || 'Shared Property';
+  const date   = snap.ts ? new Date(snap.ts).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  const banner = document.createElement('div');
+  banner.className = 'shared-view-banner';
+  banner.id = 'sharedViewBanner';
+  banner.innerHTML = `
+    <div class="svb-ico">🔗</div>
+    <div class="svb-body">
+      <div class="svb-title">Viewing shared design</div>
+      <div class="svb-sub">${name}${date ? ' · Shared ' + date : ''}</div>
+    </div>
+    <button class="svb-close" id="svbClose" title="Dismiss">✕</button>`;
+
+  // Insert at top of report screen body
+  const body = container.querySelector('.screen-body');
+  if (body) body.insertBefore(banner, body.firstChild);
+
+  document.getElementById('svbClose')?.addEventListener('click', () => banner.remove());
+}
+
 // ── Session restore ────────────────────────────────────────────────────
 
 /**
