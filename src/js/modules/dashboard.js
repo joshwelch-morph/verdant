@@ -7,6 +7,7 @@
  */
 
 import { APP } from './state.js';
+import { clearState, getSavedAt } from './persist.js';
 
 // ── Gauge helper ───────────────────────────────────────────────────────
 
@@ -350,8 +351,33 @@ export function renderDashboard() {
       </div>
     </div>
 
+    <!-- Session footer -->
+    <div class="dash-session-footer" id="dashSessionFooter">
+      <div class="dsf-info" id="dashSessionInfo"></div>
+      <button class="dsf-reset" id="dashResetBtn">↺ Start Over</button>
+    </div>
+
     <div style="height:90px"></div>
   `;
+
+  // Wire Start Over button
+  const resetBtn = document.getElementById('dashResetBtn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (confirm('Start over? This will clear your current design and all analysis data.')) {
+        clearState();
+        location.reload();
+      }
+    });
+  }
+
+  // Show saved-at info
+  const savedAt = getSavedAt();
+  const infoEl = document.getElementById('dashSessionInfo');
+  if (infoEl && savedAt) {
+    const d = new Date(savedAt);
+    infoEl.textContent = `Saved ${d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`;
+  }
 
   // Trigger animations after browser has painted the new DOM
   requestAnimationFrame(() => requestAnimationFrame(_animateDashboard));

@@ -48,6 +48,9 @@ export async function fetchINat() {
     _renderFetchSummary();
 
     toast(`${APP.inatPlants.length} plants + ${APP.inatAnimals.length} animals found`, '🔬');
+
+    // Persist the new iNat observations
+    import('./persist.js').then(m => m.saveState());
   } catch (e) {
     _setBadge('fb-plants', 'Failed', 'fb-off');
     _setBadge('fb-animals', 'Failed', 'fb-off');

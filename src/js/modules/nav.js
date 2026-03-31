@@ -11,6 +11,7 @@ import { renderCal } from './calendar.js';
 import { renderReport } from './report.js';
 import { renderDashboard } from './dashboard.js';
 import { initSysRow } from './inat.js';
+import { setPersistedScreen } from './persist.js';
 
 let currentScreen = 's0';
 
@@ -31,6 +32,9 @@ export function navTo(id) {
 
   next.classList.add('active');
   currentScreen = id;
+
+  // Persist the current screen so we can restore it on reload
+  setPersistedScreen(id);
 
   // Sync bottom nav highlight
   document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));

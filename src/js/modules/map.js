@@ -428,6 +428,9 @@ function _toggleOpp(id) {
 
   // Notify inat module so sysRow stays in sync
   import('./inat.js').then(m => m.initSysRow());
+
+  // Persist the updated selectedOpps
+  import('./persist.js').then(m => m.saveState());
 }
 
 // ── Zone blobs ────────────────────────────────────────────────────────

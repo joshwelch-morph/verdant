@@ -24,6 +24,105 @@ import { wireSeasonTabs } from './modules/calendar.js';
 import { renderDashboard } from './modules/dashboard.js';
 import { runIngestion } from './modules/ingest.js';
 import { invalidateReportCache } from './modules/report.js';
+import { saveState, loadState, clearState, hasSavedState, getSavedScreen, getSavedAt } from './modules/persist.js';
+
+// ── Session restore ────────────────────────────────────────────────────
+
+/**
+ * On boot, check for a saved session. If one exists, show a "Resume" banner
+ * on the setup screen instead of requiring the user to re-enter everything.
+ */
+(function _bootRestore() {
+  if (!hasSavedState()) return;
+
+  const savedAt = getSavedAt();
+  const when = savedAt
+    ? _relativeTime(savedAt)
+    : 'a previous session';
+
+  // Inject the resume banner into the setup screen
+  const setupInner = document.querySelector('.setup-inner');
+  if (!setupInner) return;
+
+  const banner = document.createElement('div');
+  banner.className = 'resume-banner';
+  banner.id = 'resumeBanner';
+  banner.innerHTML = `
+    <div class="rb-icon">🌿</div>
+    <div class="rb-body">
+      <div class="rb-title">Resume your session</div>
+      <div class="rb-sub">Saved ${when} · ${_savedPropertyName()}</div>
+    </div>
+    <button class="rb-btn" id="resumeBtn">Resume →</button>
+    <button class="rb-clear" id="clearBtn" title="Start fresh">✕</button>
+  `;
+  // Insert at the top of setup-inner, above the emblem
+  setupInner.insertBefore(banner, setupInner.firstChild);
+
+  document.getElementById('resumeBtn').addEventListener('click', _resumeSession);
+  document.getElementById('clearBtn').addEventListener('click', _discardSession);
+})();
+
+function _savedPropertyName() {
+  try {
+    const raw = localStorage.getItem('verdant_v1');
+    const d = raw ? JSON.parse(raw) : null;
+    return d?.property?.name || 'Your Property';
+  } catch { return 'Your Property'; }
+}
+
+function _relativeTime(ms) {
+  const diff = Date.now() - ms;
+  const mins = Math.round(diff / 60000);
+  if (mins < 2)  return 'just now';
+  if (mins < 60) return `${mins} minutes ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24)  return `${hrs} hour${hrs !== 1 ? 's' : ''} ago`;
+  const days = Math.round(hrs / 24);
+  return `${days} day${days !== 1 ? 's' : ''} ago`;
+}
+
+/**
+ * Load persisted state and skip the setup screen entirely,
+ * navigating straight to the screen the user was last on.
+ */
+function _resumeSession() {
+  const ok = loadState();
+  if (!ok) {
+    toast('Could not restore session', '⚠️');
+    return;
+  }
+  showNav();
+  const screen = getSavedScreen();
+  // Activate s0 → next screen transition correctly
+  const s0 = document.getElementById('s0');
+  if (s0) s0.classList.remove('active');
+  navTo(screen);
+
+  // If analysis ran, re-render results panels
+  if (APP.analysisRan) {
+    _renderPlantResults();
+    _updatePlantsNavBadge();
+    renderDashboard();
+  }
+
+  // If we had ingestion data, re-render dashboard
+  if (APP.siteProfile) {
+    renderDashboard();
+    _setDashSub('✅ Site data loaded — ' + (APP.siteProfile.climate || 'see Overview'));
+  }
+
+  toast('Session restored', '🌿');
+}
+
+/**
+ * Discard the saved session and let the user start fresh.
+ */
+function _discardSession() {
+  clearState();
+  const banner = document.getElementById('resumeBanner');
+  if (banner) banner.remove();
+}
 
 // ── Setup screen ───────────────────────────────────────────────────────
 
@@ -47,6 +146,9 @@ function startApp() {
   // Pre-populate iNaturalist coordinate fields from the property address
   // (map geocoding will update these once the map is shown)
   _syncInatCoords();
+
+  // Persist the initial property profile immediately
+  saveState();
 
   showNav();
   navTo('s1');
@@ -100,6 +202,7 @@ async function _startIngestion(lat, lng) {
     _setDashSub('⏳ Fetching climate & soil data…');
     await runIngestion(lat, lng);
     _setDashSub('✅ Site data loaded — ' + (APP.siteProfile?.climate || 'see Overview'));
+    saveState(); // persist enriched siteProfile
     renderDashboard(); // refresh with real data
   } catch (e) {
     _setDashSub('Your property at a glance');
@@ -162,6 +265,7 @@ async function runAnalysis() {
     APP.wildlife = result.wildlife || {};
     APP.analysisRan = true;
     invalidateReportCache(); // force narrative to regenerate
+    saveState();             // persist analysis results
     _renderPlantResults();
     _updatePlantsNavBadge();
     renderDashboard(); // update gauges with fresh data
@@ -350,6 +454,7 @@ function _togglePlantAdd(name, btn) {
     toast(`${name} added`, '🌿');
   }
   _updatePlantsNavBadge();
+  saveState(); // persist plant selection change
 }
 
 function _updatePlantsNavBadge() {
