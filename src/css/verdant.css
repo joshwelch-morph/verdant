@@ -1858,3 +1858,56 @@ body {
 }
 .dpp-sub { font-size: 13px; color: var(--muted); line-height: 1.65; }
 .dp-empty { font-size: 13px; color: var(--muted); padding: 12px 0; text-align: center; }
+
+/* ── First-run tour tooltip ───────────────────────────────────────────── */
+.tour-tip {
+  position: fixed;
+  z-index: 9999;
+  width: min(300px, calc(100vw - 28px));
+  background: linear-gradient(135deg, #1a2e15, #0f1f0b);
+  border: 1.5px solid rgba(91,163,116,.5);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.55), 0 0 0 1px rgba(91,163,116,.12);
+  padding: 16px 18px;
+  pointer-events: auto;
+  transition: opacity .3s, transform .3s;
+  opacity: 0;
+  transform: translateY(6px);
+}
+.tour-tip.tour-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+.tour-tip.tour-out {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+.tt-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #c8f5a0;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.tt-text {
+  font-size: 12px;
+  color: rgba(200,245,160,.8);
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+.tt-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+.tt-dismiss {
+  background: rgba(91,163,116,.25);
+  border: 1px solid rgba(91,163,116,.4);
+  border-radius: 9px;
+  color: #c8f5a0;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.tt-dismiss:hover { background: rgba(91,163,116,.4); }

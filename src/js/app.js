@@ -25,6 +25,7 @@ import { renderDashboard } from './modules/dashboard.js';
 import { runIngestion } from './modules/ingest.js';
 import { invalidateReportCache } from './modules/report.js';
 import { saveState, loadState, clearState, hasSavedState, getSavedScreen, getSavedAt } from './modules/persist.js';
+import { initTour } from './modules/tour.js';
 
 // ── Session restore ────────────────────────────────────────────────────
 
@@ -93,6 +94,7 @@ function _resumeSession() {
     return;
   }
   showNav();
+  initTour(); // tour state already has seen screens from previous session
   const screen = getSavedScreen();
   // Activate s0 → next screen transition correctly
   const s0 = document.getElementById('s0');
@@ -151,6 +153,7 @@ function startApp() {
   saveState();
 
   showNav();
+  initTour(); // start first-run tooltip tour
   navTo('s1');
 }
 
