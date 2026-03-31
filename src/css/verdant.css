@@ -1622,3 +1622,239 @@ body {
   border-color: var(--red);
   color: var(--red);
 }
+
+/* ── Design Plan screen (S3) ────────────────────────────────────────── */
+
+/* Summary stats row */
+.dp-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 12px 14px 4px;
+}
+.dp-stat {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.dp-stat-v {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--green);
+  line-height: 1.1;
+  font-family: 'Lora', serif;
+}
+.dp-stat-l {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+/* Section label sub-text */
+.sl-sub {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--muted2);
+  margin-left: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Forest layer chart */
+.layer-chart { padding: 0 14px 6px; }
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+.lr-emoji { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
+.lr-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  width: 80px;
+  flex-shrink: 0;
+}
+.lr-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.lr-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+}
+.lr-count {
+  font-size: 11px;
+  color: var(--muted);
+  width: 18px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Guild blocks */
+.guild-list { padding: 0 14px; }
+.guild-block {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.gb-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.gb-anchor { font-size: 24px; flex-shrink: 0; }
+.gb-info { flex: 1; min-width: 0; }
+.gb-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.gb-layers { font-size: 11px; color: var(--muted); }
+.gb-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(91,163,116,.12);
+  border-radius: 8px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+}
+.gb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+/* Plant chips */
+.dp-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 5px 8px;
+  font-size: 11px;
+  cursor: default;
+  transition: border-color .15s;
+}
+.dp-chip-added {
+  border-color: var(--green);
+  background: rgba(91,163,116,.08);
+}
+.dp-chip-e { font-size: 13px; }
+.dp-chip-n {
+  font-weight: 600;
+  color: var(--text);
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dp-chip-l {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+/* Companion pairs */
+.gb-pairs {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.gp-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin-right: 4px;
+}
+.cp-pair {
+  font-size: 11px;
+  color: var(--text);
+  background: rgba(221,161,94,.12);
+  border: 1px solid rgba(221,161,94,.25);
+  border-radius: 8px;
+  padding: 3px 8px;
+}
+
+/* System checklist */
+.sys-phase-group { margin-bottom: 12px; }
+.spg-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 6px;
+}
+.sys-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.sys-item:hover { border-color: var(--green); }
+.sys-item.done {
+  background: rgba(91,163,116,.06);
+  border-color: rgba(91,163,116,.3);
+}
+.sys-item.done .si-name { text-decoration: line-through; color: var(--muted); }
+.si-ico { font-size: 20px; flex-shrink: 0; }
+.si-body { flex: 1; min-width: 0; }
+.si-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.si-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.si-check {
+  font-size: 16px;
+  color: var(--muted2);
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+  transition: color .15s;
+}
+.sys-item.done .si-check { color: var(--green); }
+
+/* Added plants section */
+.added-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0; }
+
+/* Placeholder */
+.dp-placeholder { padding: 40px 22px 24px; text-align: center; }
+.dpp-ico { font-size: 42px; margin-bottom: 12px; }
+.dpp-title {
+  font-family: 'Lora', serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.dpp-sub { font-size: 13px; color: var(--muted); line-height: 1.65; }
+.dp-empty { font-size: 13px; color: var(--muted); padding: 12px 0; text-align: center; }

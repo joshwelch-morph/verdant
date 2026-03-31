@@ -303,45 +303,33 @@
   <div class="topbar">
     <div class="logo">🌿 Verdant</div>
     <div class="page-title">Your <em>design plan</em></div>
-    <div class="page-sub">Phased, sequenced & matched to your land</div>
+    <div class="page-sub">Guilds, systems & companion plantings</div>
   </div>
   <div class="screen-body">
-    <div class="sec-label">Overview</div>
-    <div class="plan-summary">
-      <div class="plan-box"><div class="pb-v">3</div><div class="pb-l">Design phases</div></div>
-      <div class="plan-box"><div class="pb-v">~10 yrs</div><div class="pb-l">Full maturity</div></div>
-      <div class="plan-box"><div class="pb-v">+27%</div><div class="pb-l">Soil carbon yr 10</div></div>
-      <div class="plan-box"><div class="pb-v">~4 hrs</div><div class="pb-l">Weekly at yr 3</div></div>
-    </div>
-    <div class="sec-label">Phased Implementation</div>
-    <div id="phaseList" style="padding:0 14px"></div>
-    <div class="sec-label">Earthworks Specification</div>
-    <div style="padding:0 14px">
-      <div class="card">
-        <div style="font-size:13px;font-weight:700;margin-bottom:8px">💧 Swale Dimensions</div>
-        <table class="spec-table">
-          <thead><tr><th>Location</th><th>Length</th><th>Width</th><th>Depth</th></tr></thead>
-          <tbody>
-            <tr><td>Upper slope</td><td>18m</td><td>0.8m</td><td>0.4m</td></tr>
-            <tr><td>Mid slope</td><td>22m</td><td>1.0m</td><td>0.5m</td></tr>
-            <tr><td>Lower slope</td><td>20m</td><td>0.9m</td><td>0.45m</td></tr>
-          </tbody>
-        </table>
+
+    <!-- Design overview stats -->
+    <div class="dp-stats">
+      <div class="dp-stat">
+        <div class="dp-stat-v" id="dp-stat-plants">–</div>
+        <div class="dp-stat-l">Plants</div>
       </div>
-      <div class="card" style="margin-top:10px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:8px">🌊 Retention Pond</div>
-        <table class="spec-table">
-          <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
-          <tbody>
-            <tr><td>Surface area</td><td>400m²</td></tr>
-            <tr><td>Max depth</td><td>1.8m</td></tr>
-            <tr><td>Spillway width</td><td>2.4m</td></tr>
-            <tr><td>Inlet type</td><td>Rock-lined channel</td></tr>
-          </tbody>
-        </table>
+      <div class="dp-stat">
+        <div class="dp-stat-v" id="dp-stat-guilds">–</div>
+        <div class="dp-stat-l">Guilds</div>
+      </div>
+      <div class="dp-stat">
+        <div class="dp-stat-v" id="dp-stat-layers">–</div>
+        <div class="dp-stat-l">Layers</div>
+      </div>
+      <div class="dp-stat">
+        <div class="dp-stat-v" id="dp-stat-systems">–</div>
+        <div class="dp-stat-l">Systems</div>
       </div>
     </div>
-    <div style="height:90px"></div>
+
+    <!-- Dynamic content from plan.js -->
+    <div id="planContent"></div>
+
   </div>
 </div>
 
