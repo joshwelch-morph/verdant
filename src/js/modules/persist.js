@@ -44,6 +44,9 @@ function _serialise() {
     // iNat observations
     inatPlants:    APP.inatPlants,
     inatAnimals:   APP.inatAnimals,
+
+    // Custom map zones
+    customZones:   APP.customZones,
   };
 }
 
@@ -74,6 +77,9 @@ function _deserialise(data) {
     // iNat
     APP.inatPlants   = data.inatPlants   || [];
     APP.inatAnimals  = data.inatAnimals  || [];
+
+    // Custom zones
+    APP.customZones  = data.customZones  || [];
 
     return true;
   } catch {

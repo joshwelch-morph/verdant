@@ -54,4 +54,8 @@ export const APP = {
   // ── Site profile (from ingestion pipeline) ───────────────────────────
   // Populated by ingest.js after geocoding. Null until first ingestion.
   siteProfile: null,
+
+  // ── Custom map zones (user-drawn polygons) ───────────────────────────
+  // Array of { zoneType: 'water'|'food'|'solar'|'soil', coords: [[lng,lat],...] }
+  customZones: [],
 };

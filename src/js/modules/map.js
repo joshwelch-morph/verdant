@@ -16,10 +16,24 @@ import { runAIPlacement } from './claude.js';
 let mapInitDone = false;
 let verdantMap = null;
 
-// Draw-mode state
+// Boundary draw-mode state
 let mapDrawMode = false;
 let mapDrawCoords = [];
 let mapDrawMarkers = [];
+
+// Zone draw-mode state
+let zoneDrawMode = false;
+let zoneDrawType = 'water'; // current zone type being drawn
+let zoneDrawCoords = [];
+let zoneDrawMarkers = [];
+
+// Custom zone source ids keyed by zone type (separate layers from AI zones)
+const CUSTOM_ZONE_IDS = {
+  water: 'custom-zone-water',
+  food:  'custom-zone-food',
+  solar: 'custom-zone-solar',
+  soil:  'custom-zone-soil',
+};
 
 // Placed pin markers keyed by opportunity id
 let mapPinMarkers = {};
@@ -213,11 +227,12 @@ function _addBoundaryLayer() {
 }
 
 function _addZoneLayers() {
+  // AI-placed zone blobs
   [
     { id: 'zone-water', color: 'rgba(58,159,200,0.22)' },
-    { id: 'zone-food', color: 'rgba(92,184,50,0.2)' },
+    { id: 'zone-food',  color: 'rgba(92,184,50,0.2)'   },
     { id: 'zone-solar', color: 'rgba(232,168,48,0.18)' },
-    { id: 'zone-soil', color: 'rgba(200,120,48,0.15)' },
+    { id: 'zone-soil',  color: 'rgba(200,120,48,0.15)' },
   ].forEach(z => {
     verdantMap.addSource(z.id, {
       type: 'geojson',
@@ -228,6 +243,65 @@ function _addZoneLayers() {
       type: 'fill',
       source: z.id,
       paint: { 'fill-color': z.color, 'fill-opacity': 1 },
+    });
+  });
+
+  // User-drawn custom zone layers — more opaque fill + outline
+  [
+    { id: CUSTOM_ZONE_IDS.water, fill: 'rgba(58,159,200,0.35)',  line: '#3a9fc8' },
+    { id: CUSTOM_ZONE_IDS.food,  fill: 'rgba(92,184,50,0.32)',   line: '#5cb832' },
+    { id: CUSTOM_ZONE_IDS.solar, fill: 'rgba(232,168,48,0.30)',  line: '#e8a830' },
+    { id: CUSTOM_ZONE_IDS.soil,  fill: 'rgba(200,120,48,0.28)',  line: '#c87830' },
+  ].forEach(z => {
+    verdantMap.addSource(z.id, {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
+    // Fill
+    verdantMap.addLayer({
+      id: z.id + '-fill',
+      type: 'fill',
+      source: z.id,
+      paint: { 'fill-color': z.fill, 'fill-opacity': 1 },
+    });
+    // Outline
+    verdantMap.addLayer({
+      id: z.id + '-line',
+      type: 'line',
+      source: z.id,
+      paint: {
+        'line-color': z.line,
+        'line-width': 2,
+        'line-opacity': 0.8,
+        'line-dasharray': [3, 2],
+      },
+    });
+  });
+
+  // Restore any previously drawn custom zones from APP state
+  _restoreCustomZones();
+}
+
+/**
+ * Re-render all custom zones stored in APP.customZones onto the map.
+ * Called after map style loads (which clears all sources).
+ */
+function _restoreCustomZones() {
+  if (!APP.customZones?.length) return;
+  const byType = {};
+  APP.customZones.forEach(z => {
+    if (!byType[z.zoneType]) byType[z.zoneType] = [];
+    byType[z.zoneType].push(z.coords);
+  });
+  Object.entries(byType).forEach(([type, coordsArr]) => {
+    const srcId = CUSTOM_ZONE_IDS[type];
+    if (!srcId || !verdantMap.getSource(srcId)) return;
+    verdantMap.getSource(srcId).setData({
+      type: 'FeatureCollection',
+      features: coordsArr.map(coords => ({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [coords] },
+      })),
     });
   });
 }
@@ -404,6 +478,15 @@ function _addPin(o) {
     .addTo(verdantMap);
 
   mapPinMarkers[o.id] = marker;
+
+  // Apply selected highlight if this opp is already in selectedOpps (e.g. session restore)
+  if (APP.selectedOpps.has(o.id)) {
+    const label = el.querySelector('div');
+    if (label) {
+      label.style.boxShadow = '0 0 0 2px rgba(91,163,116,.8), 0 0 14px rgba(91,163,116,.5)';
+      label.style.borderColor = 'rgba(91,163,116,.9)';
+    }
+  }
 }
 
 function _openOppDrawer(id) {
@@ -425,12 +508,33 @@ function _toggleOpp(id) {
     toast((aiOpps[id]?.title || id) + ' added!', '✅');
   }
   _updateMapHUD();
+  _updatePinHighlight(id);
 
   // Notify inat module so sysRow stays in sync
   import('./inat.js').then(m => m.initSysRow());
 
   // Persist the updated selectedOpps
   import('./persist.js').then(m => m.saveState());
+}
+
+/**
+ * Toggle the "selected" visual state on a map pin.
+ * Selected pins get a pulsing green ring around their label.
+ */
+function _updatePinHighlight(id) {
+  const marker = mapPinMarkers[id];
+  if (!marker) return;
+  const el = marker.getElement();
+  const label = el.querySelector('div');
+  if (!label) return;
+  const isSelected = APP.selectedOpps.has(id);
+  if (isSelected) {
+    label.style.boxShadow = '0 0 0 2px rgba(91,163,116,.8), 0 0 14px rgba(91,163,116,.5)';
+    label.style.borderColor = 'rgba(91,163,116,.9)';
+  } else {
+    label.style.boxShadow = '0 4px 16px rgba(0,0,0,.6)';
+    label.style.borderColor = '';
+  }
 }
 
 // ── Zone blobs ────────────────────────────────────────────────────────
@@ -651,7 +755,120 @@ export function clearBoundary() {
   document.getElementById('mapAcreBadge').style.display = 'none';
 }
 
+// ── Zone drawing ───────────────────────────────────────────────────────
+
+export function startZoneDrawMode() {
+  zoneDrawMode = true;
+  zoneDrawCoords = [];
+  zoneDrawMarkers.forEach(m => m.remove());
+  zoneDrawMarkers = [];
+  document.getElementById('zoneDrawToolbar').style.display = 'flex';
+  document.getElementById('zoneDrawBanner').style.display = 'flex';
+  verdantMap.getCanvas().style.cursor = 'crosshair';
+}
+
+export function confirmZoneDraw() {
+  if (zoneDrawCoords.length < 3) {
+    toast('Tap at least 3 points to create a zone', '⚠️');
+    return;
+  }
+
+  // Close the ring
+  const closed = [...zoneDrawCoords, zoneDrawCoords[0]];
+
+  // Save to APP state
+  APP.customZones.push({ zoneType: zoneDrawType, coords: closed });
+
+  // Update the map source for this zone type by rebuilding the full feature collection
+  const srcId = CUSTOM_ZONE_IDS[zoneDrawType];
+  if (srcId && verdantMap.getSource(srcId)) {
+    const allForType = APP.customZones
+      .filter(z => z.zoneType === zoneDrawType)
+      .map(z => ({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [z.coords] },
+      }));
+    verdantMap.getSource(srcId).setData({ type: 'FeatureCollection', features: allForType });
+  }
+
+  _cancelZoneDraw();
+  toast(`${zoneDrawType.charAt(0).toUpperCase() + zoneDrawType.slice(1)} zone added`, '✅');
+
+  // Persist
+  import('./persist.js').then(m => m.saveState());
+}
+
+export function cancelZoneDrawMode() {
+  _cancelZoneDraw();
+}
+
+function _cancelZoneDraw() {
+  zoneDrawMode = false;
+  zoneDrawCoords = [];
+  zoneDrawMarkers.forEach(m => m.remove());
+  zoneDrawMarkers = [];
+  document.getElementById('zoneDrawToolbar').style.display = 'none';
+  document.getElementById('zoneDrawBanner').style.display = 'none';
+  verdantMap.getCanvas().style.cursor = '';
+}
+
+function _setZoneDrawType(type) {
+  zoneDrawType = type;
+  document.querySelectorAll('.zdz-type').forEach(btn => {
+    const isActive = btn.dataset.zone === type;
+    const colors = {
+      water: { bg: 'rgba(58,159,200,.2)',  border: 'rgba(58,159,200,.5)',  color: '#90d8f0' },
+      food:  { bg: 'rgba(92,184,50,.18)',  border: 'rgba(92,184,50,.5)',   color: '#a0e060' },
+      solar: { bg: 'rgba(232,168,48,.18)', border: 'rgba(232,168,48,.5)',  color: '#f0c860' },
+      soil:  { bg: 'rgba(200,120,48,.18)', border: 'rgba(200,120,48,.5)',  color: '#d4a870' },
+    };
+    const c = colors[btn.dataset.zone];
+    if (isActive) {
+      btn.style.background = c.bg;
+      btn.style.borderColor = c.border;
+      btn.style.color = c.color;
+      btn.classList.add('on');
+    } else {
+      btn.style.background = 'rgba(12,20,8,.5)';
+      btn.style.borderColor = 'var(--border)';
+      btn.style.color = 'var(--muted)';
+      btn.classList.remove('on');
+    }
+  });
+}
+
 function _onMapClick(e) {
+  if (zoneDrawMode) {
+    // Zone draw mode takes priority over boundary draw
+    zoneDrawCoords.push([e.lngLat.lng, e.lngLat.lat]);
+
+    // Drop a coloured dot for visual feedback
+    const zoneColors = { water: '#3a9fc8', food: '#5cb832', solar: '#e8a830', soil: '#c87830' };
+    const color = zoneColors[zoneDrawType] || '#5ba374';
+    const dot = document.createElement('div');
+    dot.style.cssText = `width:9px;height:9px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,.6)`;
+    const m = new mapboxgl.Marker({ element: dot }).setLngLat(e.lngLat).addTo(verdantMap);
+    zoneDrawMarkers.push(m);
+
+    // Live preview polygon as we draw
+    if (zoneDrawCoords.length >= 3) {
+      const srcId = CUSTOM_ZONE_IDS[zoneDrawType];
+      if (srcId && verdantMap.getSource(srcId)) {
+        // Show preview as the last (temporary) feature in the collection
+        const existing = APP.customZones.filter(z => z.zoneType === zoneDrawType);
+        const preview = { type: 'Feature', geometry: { type: 'Polygon', coordinates: [[...zoneDrawCoords, zoneDrawCoords[0]]] } };
+        verdantMap.getSource(srcId).setData({
+          type: 'FeatureCollection',
+          features: [
+            ...existing.map(z => ({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [z.coords] } })),
+            preview,
+          ],
+        });
+      }
+    }
+    return;
+  }
+
   if (!mapDrawMode) return;
   mapDrawCoords.push([e.lngLat.lng, e.lngLat.lat]);
 
@@ -709,7 +926,7 @@ export function setMapStyle(style, activeBtn) {
     _addSkyLayer();
     _addContourLayers();
     _addBoundaryLayer();
-    _addZoneLayers();
+    _addZoneLayers(); // also calls _restoreCustomZones()
     // Re-place existing pins after style reload
     const existing = Object.values(aiOpps);
     if (existing.length) {
@@ -838,13 +1055,26 @@ function _wireControls() {
   if (satBtn) satBtn.addEventListener('click', () => setMapStyle('satellite', satBtn));
   if (topoBtn) topoBtn.addEventListener('click', () => setMapStyle('topo', topoBtn));
 
-  // Draw
+  // Boundary draw
   const drawBtn = document.getElementById('btn-draw');
   if (drawBtn) drawBtn.addEventListener('click', startDrawMode);
   const confirmBtn = document.getElementById('confirmBoundaryBtn');
   if (confirmBtn) confirmBtn.addEventListener('click', confirmBoundary);
   const clearBtn = document.getElementById('clearBoundaryBtn');
   if (clearBtn) clearBtn.addEventListener('click', clearBoundary);
+
+  // Zone draw
+  const zoneDrawBtn = document.getElementById('btn-zone-draw');
+  if (zoneDrawBtn) zoneDrawBtn.addEventListener('click', startZoneDrawMode);
+  const zoneConfirmBtn = document.getElementById('zoneDrawConfirmBtn');
+  if (zoneConfirmBtn) zoneConfirmBtn.addEventListener('click', confirmZoneDraw);
+  const zoneCancelBtn = document.getElementById('zoneDrawCancelBtn');
+  if (zoneCancelBtn) zoneCancelBtn.addEventListener('click', cancelZoneDrawMode);
+
+  // Zone type picker
+  document.querySelectorAll('.zdz-type').forEach(btn => {
+    btn.addEventListener('click', () => _setZoneDrawType(btn.dataset.zone));
+  });
 
   // Layer switcher
   document.querySelectorAll('#mapLayerSwitcher [data-layer]').forEach(el => {

@@ -104,6 +104,7 @@
     <button id="btn-sat" style="width:36px;height:36px;border-radius:9px;background:rgba(85,176,37,.2);border:1px solid rgba(85,176,37,.4);color:#a0e060;font-size:13px;cursor:pointer;" title="Satellite">🛰</button>
     <button id="btn-topo" style="width:36px;height:36px;border-radius:9px;background:rgba(12,20,8,.9);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;" title="Terrain">🗺</button>
     <button id="btn-draw" style="width:36px;height:36px;border-radius:9px;background:rgba(12,20,8,.9);border:1px solid rgba(232,168,48,.3);color:var(--amber-lt);font-size:13px;cursor:pointer;" title="Draw boundary">✏️</button>
+    <button id="btn-zone-draw" style="width:36px;height:36px;border-radius:9px;background:rgba(12,20,8,.9);border:1px solid rgba(91,163,116,.3);color:var(--green-lt);font-size:13px;cursor:pointer;" title="Draw zone overlay">🖊️</button>
   </div>
 
   <!-- Layer switcher -->
@@ -137,7 +138,7 @@
   <div id="mapAcreBadge" style="position:absolute;bottom:150px;left:50%;transform:translateX(-50%);z-index:50;background:rgba(12,20,8,.9);border:1px solid var(--border);border-radius:30px;padding:5px 14px;font-size:12px;font-weight:700;color:var(--green-lt);display:none;"></div>
 
   <!-- Bottom HUD -->
-  <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:9px;">
+  <div id="mapHUD" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:9px;">
     <div style="background:rgba(12,20,8,.94);border:1px solid var(--border);border-radius:50px;padding:9px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);backdrop-filter:blur(12px);">
       <div style="display:flex;align-items:center;gap:5px;"><span style="font-size:13px">🌧️</span><div><div style="font-weight:800;font-size:12px" id="mv-w">–</div><div style="color:var(--muted);font-size:9px">Rain saved</div></div></div>
       <div style="width:1px;height:16px;background:var(--border)"></div>
@@ -146,6 +147,23 @@
       <div style="display:flex;align-items:center;gap:5px;"><span style="font-size:13px">✅</span><div><div style="font-weight:800;font-size:12px" id="mv-s">0</div><div style="color:var(--muted);font-size:9px">Selected</div></div></div>
     </div>
     <button id="mapCta" style="padding:10px 18px;border:none;border-radius:50px;background:linear-gradient(135deg,#2a6018,#4a9828);color:var(--cream);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 3px 16px rgba(74,152,40,.4);opacity:0;pointer-events:none;transform:scale(.9);transition:all .25s;">Plants →</button>
+  </div>
+
+  <!-- Zone draw toolbar -->
+  <div id="zoneDrawToolbar" style="display:none;position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(12,20,8,.96);border:1px solid rgba(91,163,116,.35);border-radius:50px;padding:7px 14px;align-items:center;gap:8px;backdrop-filter:blur(12px);box-shadow:0 4px 20px rgba(0,0,0,.6);">
+    <span style="font-size:11px;font-weight:700;color:var(--muted);margin-right:2px;">Zone:</span>
+    <button class="zdz-type on" data-zone="water" style="padding:4px 10px;border-radius:20px;border:1px solid rgba(58,159,200,.5);background:rgba(58,159,200,.2);color:#90d8f0;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">💧 Water</button>
+    <button class="zdz-type" data-zone="food" style="padding:4px 10px;border-radius:20px;border:1px solid rgba(92,184,50,.3);background:rgba(12,20,8,.5);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">🌳 Food</button>
+    <button class="zdz-type" data-zone="solar" style="padding:4px 10px;border-radius:20px;border:1px solid rgba(232,168,48,.3);background:rgba(12,20,8,.5);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">☀️ Solar</button>
+    <button class="zdz-type" data-zone="soil" style="padding:4px 10px;border-radius:20px;border:1px solid rgba(200,120,48,.3);background:rgba(12,20,8,.5);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">🪱 Soil</button>
+    <div style="width:1px;height:18px;background:var(--border);margin:0 4px;"></div>
+    <button id="zoneDrawConfirmBtn" style="padding:4px 12px;border-radius:20px;border:1px solid rgba(85,176,37,.4);background:rgba(85,176,37,.18);color:#a0e060;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">✓ Done</button>
+    <button id="zoneDrawCancelBtn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">✕</button>
+  </div>
+
+  <!-- Zone draw banner -->
+  <div id="zoneDrawBanner" style="display:none;position:absolute;top:54px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(91,163,116,.12);border:1px solid rgba(91,163,116,.4);border-radius:30px;padding:7px 18px;font-size:12px;font-weight:700;color:#a0e060;align-items:center;gap:8px;white-space:nowrap;backdrop-filter:blur(8px);">
+    🖊️ Tap to draw zone polygon — 3+ points
   </div>
 
   <!-- AI status indicator -->
