@@ -1103,6 +1103,13 @@ body {
 .rss-icon { font-size: 18px; flex-shrink: 0; }
 .rss-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
 .rss-val { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3; }
+/* Stage 3 highlight states */
+.rss-item.rss-warn { background: rgba(200,120,48,.07); border-color: rgba(200,120,48,.25); }
+.rss-item.rss-warn .rss-label { color: #c87830; }
+.rss-item.rss-warn .rss-val   { color: #a05a18; }
+.rss-item.rss-cool { background: rgba(80,140,200,.07); border-color: rgba(80,140,200,.22); }
+.rss-item.rss-cool .rss-label { color: #3a7fbb; }
+.rss-item.rss-cool .rss-val   { color: #2d6a9f; }
 
 .share-card {
   display: flex;
