@@ -179,6 +179,19 @@ export async function generateReportNarrative() {
   const solarLine   = sp?.solar_kwh_day ? `${sp.solar_kwh_day} kWh/m²/day solar irradiance` : 'variable solar';
   const elevLine    = sp?.elevation ? `${Math.round(sp.elevation)}m elevation` : '';
 
+  // Stage 3 extras for the report
+  const MO_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const growingLine_r = sp?.growing_months?.length
+    ? sp.growing_months.map(m => MO_ABBR[m - 1]).join(', ')
+    : '';
+  const landUseLine_r = sp?.land_use_summary || '';
+  const gbifLine_r = (sp?.gbif_plant_count != null || sp?.gbif_animal_count != null)
+    ? `${sp.gbif_plant_count ?? '?'} plant observations, ${sp.gbif_animal_count ?? '?'} animal observations within 50km`
+    : '';
+  const solarSeasonLine_r = (sp?.solar_peak_month && sp?.solar_low_month)
+    ? `Peak solar ${sp.solar_peak_month} (${sp.solar_peak_kwh} kWh/m²/day), lowest ${sp.solar_low_month}`
+    : '';
+
   const prompt = `You are a regenerative land design consultant writing the narrative summary section of a property design report. Write with warmth, expertise and specificity — not generic advice.
 
 PROPERTY: ${prop.name}
@@ -190,10 +203,10 @@ SITE CONDITIONS (from real sensor/satellite data):
 - Climate: ${climateLine}
 - Rainfall: ${rainfallLine}
 - Frost: ${frostLine}
-- Solar: ${solarLine}${elevLine ? '\n- Elevation: ' + elevLine : ''}
+- Solar: ${solarLine}${solarSeasonLine_r ? ' (' + solarSeasonLine_r + ')' : ''}${elevLine ? '\n- Elevation: ' + elevLine : ''}
 - Soil: ${soilLine}
 - Slope/aspect: ${prop.slope || 'gentle'}
-- Water features: ${prop.water || 'none noted'}
+- Water features: ${prop.water || 'none noted'}${growingLine_r ? '\n- Peak growing months: ' + growingLine_r : ''}${landUseLine_r ? '\n- Surrounding land use: ' + landUseLine_r : ''}${gbifLine_r ? '\n- Local biodiversity: ' + gbifLine_r : ''}
 
 DESIGN DECISIONS:
 - Selected systems (${opps.length}): ${opps.join(', ') || 'none yet'}
@@ -250,7 +263,7 @@ export async function runPlantAnalysis(systems) {
 
   const systemPrompt = `You are an expert permaculture designer, plant ecologist, herbalist, and wildlife ecologist. Respond ONLY with valid JSON — no markdown fences, no preamble, no explanation before or after the JSON.`;
 
-  // Pull Stage 2 data from siteProfile if available
+  // Pull Stage 2 + Stage 3 data from siteProfile if available
   const sp = APP.siteProfile;
   const hardinessLine = prop.hardiness || (sp?.hardiness?.zone ? `Zone ${sp.hardiness.zone}` : 'unknown');
   const waterLine = sp?.water_balance || 'unknown';
@@ -261,6 +274,19 @@ export async function runPlantAnalysis(systems) {
     ? `${sp.drought_months.length} drought-risk months`
     : 'no seasonal drought';
 
+  // Stage 3 lines
+  const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const growingLine = sp?.growing_months?.length
+    ? sp.growing_months.map(m => MONTH_ABBR[m - 1]).join(', ')
+    : '';
+  const landUseLine = sp?.land_use_summary || '';
+  const gbifLine = (sp?.gbif_plant_count != null || sp?.gbif_animal_count != null)
+    ? `${sp.gbif_plant_count ?? '?'} plant obs · ${sp.gbif_animal_count ?? '?'} animal obs within 50km (GBIF)`
+    : '';
+  const solarSeasonLine = (sp?.solar_peak_month && sp?.solar_low_month)
+    ? `Peak solar: ${sp.solar_peak_month} (${sp.solar_peak_kwh} kWh/m²/day) · Lowest: ${sp.solar_low_month} (${sp.solar_low_kwh} kWh/m²/day)`
+    : '';
+
   const userPrompt = `Analyse this property and return plant recommendations, native medicinals, and a wildlife overview.
 
 PROPERTY: ${prop.name} | ${prop.address} | ${prop.size}
@@ -268,7 +294,7 @@ Climate: ${prop.climate || 'temperate'} | Rainfall: ${prop.rainfall || 'unknown'
 Hardiness: ${hardinessLine} | Frost: ${prop.frost || 'light'}
 Soil: ${prop.soil} | Slope: ${prop.slope || 'gentle'}${nitrogenLine ? `\nSoil nitrogen: ${nitrogenLine}` : ''}${cecLine ? ` | ${cecLine}` : ''}
 Root zone: ${waterLine} | Seasonal water: ${droughtLine}${windLine ? `\nWind: ${windLine}` : ''}
-Water features: ${prop.water} | Existing: ${prop.existing || 'pasture'}
+Water features: ${prop.water} | Existing: ${prop.existing || 'pasture'}${growingLine ? `\nPeak growing months: ${growingLine}` : ''}${solarSeasonLine ? `\nSolar seasonality: ${solarSeasonLine}` : ''}${landUseLine ? `\nSurrounding land use: ${landUseLine}` : ''}${gbifLine ? `\nLocal biodiversity: ${gbifLine}` : ''}
 Hemisphere: ${prop.address.match(/australia|new zealand|south africa|argentina|chile|brazil/i) ? 'Southern — north-facing slopes get more sun' : 'Northern — south-facing slopes get more sun'}
 Goals: ${prop.goals.join(', ')}
 SELECTED SYSTEMS: ${systems.join(', ')}

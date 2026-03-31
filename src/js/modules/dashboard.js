@@ -349,6 +349,42 @@ export function renderDashboard() {
           ${sp?.soilGrids?.ph ? `<div class="sm-sub">pH ${sp.soilGrids.ph} · ${sp.soilGrids.clay_pct ?? '–'}% clay · ${sp.soilGrids.soc_gkg ?? '–'}g/kg SOC${sp.soilGrids.nitrogen_gkg ? ` · ${sp.soilGrids.nitrogen_gkg}g/kg N` : ''}${sp.soilGrids.cec_cmol ? ` · CEC ${sp.soilGrids.cec_cmol}` : ''}</div>` : ''}
         </div>
       </div>
+      ${sp?.growing_months?.length ? `
+      <div class="sm-row">
+        <div class="sm-icon">🌱</div>
+        <div class="sm-info">
+          <div class="sm-label">Growing Season</div>
+          <div class="sm-val">${sp.growing_months.map(m => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]).join(' · ')}</div>
+          <div class="sm-sub">${sp.growing_months.length} peak growing months (≥10°C &amp; adequate rain)</div>
+        </div>
+      </div>` : ''}
+      ${(sp?.gbif_plant_count != null || sp?.gbif_animal_count != null) ? `
+      <div class="sm-row">
+        <div class="sm-icon">🦋</div>
+        <div class="sm-info">
+          <div class="sm-label">Local Biodiversity</div>
+          <div class="sm-val">${[sp.gbif_plant_count != null ? `${sp.gbif_plant_count.toLocaleString()} plant obs` : null, sp.gbif_animal_count != null ? `${sp.gbif_animal_count.toLocaleString()} animal obs` : null].filter(Boolean).join(' · ')}</div>
+          <div class="sm-sub">Documented within 50km (GBIF)</div>
+        </div>
+      </div>` : ''}
+      ${sp?.land_use_summary ? `
+      <div class="sm-row">
+        <div class="sm-icon">🗺️</div>
+        <div class="sm-info">
+          <div class="sm-label">Surrounding Land Use</div>
+          <div class="sm-val">${sp.land_use_summary}</div>
+          <div class="sm-sub">OpenStreetMap within 500m</div>
+        </div>
+      </div>` : ''}
+      ${(sp?.solar_peak_month && sp?.solar_low_month) ? `
+      <div class="sm-row">
+        <div class="sm-icon">📅</div>
+        <div class="sm-info">
+          <div class="sm-label">Solar Seasonality</div>
+          <div class="sm-val">Peak: ${sp.solar_peak_month} (${sp.solar_peak_kwh} kWh/m²/day)</div>
+          <div class="sm-sub">Lowest: ${sp.solar_low_month} (${sp.solar_low_kwh} kWh/m²/day)</div>
+        </div>
+      </div>` : ''}
     </div>
 
     <!-- Session footer -->

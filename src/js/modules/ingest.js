@@ -1,6 +1,6 @@
 /**
  * ingest.js
- * Property ingestion pipeline (Stage 1 + Stage 2).
+ * Property ingestion pipeline (Stage 1 + Stage 2 + Stage 3).
  *
  * Given a lat/lng (from geocoding the property address), fetches:
  *   1. Elevation          — OpenTopoData SRTM30m
@@ -9,6 +9,10 @@
  *   4. Soil description   — ISRIC SoilGrids (texture, pH, SOC, N, CEC)
  *   5. Hardiness zone     — phzmapi.org via BigDataCloud ZIP lookup (US)
  *                         — derived mathematically from T2M_MIN (non-US fallback)
+ *   6. Climate normals    — Open-Meteo 10yr seasonal breakdown + peak growing months
+ *   7. Biodiversity       — GBIF occurrence counts within 50km
+ *   8. Land use context   — OSM Overpass nearest land-use tags within 500m
+ *   9. Solar seasonality  — peak/low solar months from NASA POWER monthly data
  *
  * All APIs are free and require no keys.
  * Results are written into APP.property and APP.siteProfile.
@@ -106,6 +110,13 @@ async function fetchNASAPower(lat, lng) {
       .filter(m => m.wetness !== null && m.wetness < 0.3)
       .map(m => m.month);
 
+    // Monthly solar — for Stage 3 solar seasonality
+    const monthlySolar = p.ALLSKY_SFC_SW_DWN
+      ? Object.entries(p.ALLSKY_SFC_SW_DWN)
+          .filter(([k]) => k !== 'ANN')
+          .map(([k, v]) => ({ month: parseInt(k), kwh: v }))
+      : [];
+
     return {
       rain_mm_year:  rain_mm_day !== null ? Math.round(rain_mm_day * 365) : null,
       rain_mm_day,
@@ -120,24 +131,97 @@ async function fetchNASAPower(lat, lng) {
       wind_ms:       wind_ms    !== null ? +wind_ms.toFixed(1)    : null,
       cloud_pct:     cloud_pct  !== null ? Math.round(cloud_pct)  : null,
       humidity_pct:  humidity_pct !== null ? Math.round(humidity_pct) : null,
-      frost_months:  frostMonths,
+      frost_months:   frostMonths,
       drought_months: droughtMonths,
-      monthly_rain:  monthlyRain,
+      monthly_rain:   monthlyRain,
+      monthly_solar:  monthlySolar,
     };
   } catch {
     return null;
   }
 }
 
-// ── 3. Open-Meteo — timezone hint ─────────────────────────────────────
+// ── 3. Open-Meteo Climate Normals — Stage 3 ───────────────────────────
+//
+// Fetches 10-year (2010–2019) daily ERA5 data aggregated to monthly means.
+// Derives:
+//   • Seasonal temperature/rain breakdowns (DJF, MAM, JJA, SON)
+//   • Peak growing months (temp ≥ 10°C AND adequate rain ≥ 40mm/mo)
+//   • Timezone (for date display elsewhere)
+
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 async function fetchOpenMeteo(lat, lng) {
-  const url = `https://climate-api.open-meteo.com/v1/climate?latitude=${lat}&longitude=${lng}&start_date=2000-01-01&end_date=2009-12-31&models=ERA5&daily=precipitation_sum,temperature_2m_max,temperature_2m_min&timezone=auto`;
+  // Use climate normals endpoint — free, no key, CORS-open
+  const url = `https://climate-api.open-meteo.com/v1/climate?latitude=${lat}&longitude=${lng}&start_date=2010-01-01&end_date=2019-12-31&models=ERA5&monthly=temperature_2m_mean,precipitation_sum&timezone=auto`;
   try {
     const data = await fetchJSON(url);
-    return { timezone: data.timezone ?? null };
+    const monthly = data.monthly;
+    const tz = data.timezone ?? null;
+
+    if (!monthly?.temperature_2m_mean || !monthly?.precipitation_sum) {
+      return { timezone: tz };
+    }
+
+    // Build per-month means from the 10-year monthly time series
+    // The API returns one value per calendar month (120 rows for 10 years)
+    // Average them down to 12 month normals
+    const tempSums  = new Array(12).fill(0);
+    const rainSums  = new Array(12).fill(0);
+    const counts    = new Array(12).fill(0);
+    const times     = monthly.time || [];
+
+    times.forEach((t, i) => {
+      const mo = new Date(t).getUTCMonth(); // 0-based
+      const temp = monthly.temperature_2m_mean[i];
+      const rain = monthly.precipitation_sum[i];
+      if (temp != null) { tempSums[mo] += temp; counts[mo]++; }
+      if (rain != null) rainSums[mo] += rain;
+    });
+
+    const monthNormals = Array.from({ length: 12 }, (_, mo) => ({
+      month: mo + 1,                                                // 1-based
+      abbr:  MONTH_ABBR[mo],
+      temp:  counts[mo] ? +(tempSums[mo] / counts[mo]).toFixed(1) : null,
+      rain:  counts[mo] ? +(rainSums[mo] / counts[mo]).toFixed(1) : null,
+    }));
+
+    // Peak growing months: temp ≥ 10°C AND rain ≥ 40mm/month
+    const growingMonths = monthNormals
+      .filter(m => m.temp != null && m.temp >= 10 && m.rain != null && m.rain >= 40)
+      .map(m => m.month);
+
+    // If very few qualify (e.g. arid tropics with year-round heat), relax rain constraint
+    const growingMonthsFinal = growingMonths.length >= 2
+      ? growingMonths
+      : monthNormals.filter(m => m.temp != null && m.temp >= 10).map(m => m.month);
+
+    // Seasonal averages (Northern Hemisphere seasons — Southern swapped)
+    // DJF = Dec/Jan/Feb, MAM = Mar/Apr/May, JJA = Jun/Jul/Aug, SON = Sep/Oct/Nov
+    const _seasonAvg = (months0) => {
+      const vals = months0.map(i => monthNormals[i].temp).filter(v => v != null);
+      return vals.length ? +(vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : null;
+    };
+    const _seasonRain = (months0) => {
+      const vals = months0.map(i => monthNormals[i].rain).filter(v => v != null);
+      return vals.length ? +vals.reduce((a,b) => a+b, 0).toFixed(0) : null;
+    };
+
+    const seasons = {
+      DJF: { temp: _seasonAvg([11,0,1]),  rain: _seasonRain([11,0,1]),  label: 'Winter' },
+      MAM: { temp: _seasonAvg([2,3,4]),   rain: _seasonRain([2,3,4]),   label: 'Spring' },
+      JJA: { temp: _seasonAvg([5,6,7]),   rain: _seasonRain([5,6,7]),   label: 'Summer' },
+      SON: { temp: _seasonAvg([8,9,10]),  rain: _seasonRain([8,9,10]),  label: 'Autumn' },
+    };
+
+    return {
+      timezone:      tz,
+      monthNormals,
+      growingMonths: growingMonthsFinal,
+      seasons,
+    };
   } catch {
-    return null;
+    return { timezone: null };
   }
 }
 
@@ -264,6 +348,125 @@ async function fetchHardinessZone(lat, lng, nasaTempMin) {
   return null;
 }
 
+// ── 6. GBIF — biodiversity occurrence counts (Stage 3) ─────────────────
+//
+// Counts total plant and animal observations within 50km.
+// Uses the GBIF occurrence count endpoint (free, no key, CORS-open).
+
+async function fetchGBIF(lat, lng) {
+  const radius = 50000; // 50km in metres
+  try {
+    const [plantData, animalData] = await Promise.all([
+      fetchJSON(
+        `https://api.gbif.org/v1/occurrence/count?kingdomKey=6&decimalLatitude=${lat}&decimalLongitude=${lng}&radius=${radius}`
+      ).catch(() => null),
+      fetchJSON(
+        `https://api.gbif.org/v1/occurrence/count?kingdomKey=1&decimalLatitude=${lat}&decimalLongitude=${lng}&radius=${radius}`
+      ).catch(() => null),
+    ]);
+
+    // GBIF count endpoint returns an integer directly, or an object with count
+    const toCount = (v) => {
+      if (v == null) return null;
+      if (typeof v === 'number') return v;
+      if (typeof v === 'object' && v.count != null) return v.count;
+      return null;
+    };
+
+    return {
+      plant_count:  toCount(plantData),
+      animal_count: toCount(animalData),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ── 7. OSM Overpass — nearby land use context (Stage 3) ────────────────
+//
+// Queries OpenStreetMap for land use tags within 500m radius.
+// Returns up to 8 unique land-use/land-cover tags to give Claude
+// context about the surrounding landscape.
+
+const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+
+async function fetchLandUse(lat, lng) {
+  const radiusM = 500;
+  // Query for landuse, natural, and leisure tags within radius
+  const query = `[out:json][timeout:8];
+(
+  way(around:${radiusM},${lat},${lng})[landuse];
+  way(around:${radiusM},${lat},${lng})[natural];
+  relation(around:${radiusM},${lat},${lng})[landuse];
+);
+out tags 20;`;
+
+  try {
+    const data = await fetch(OVERPASS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `data=${encodeURIComponent(query)}`,
+    }).then(r => r.ok ? r.json() : null);
+
+    if (!data?.elements?.length) return null;
+
+    // Collect unique landuse + natural tag values
+    const tags = new Set();
+    for (const el of data.elements) {
+      if (el.tags?.landuse) tags.add(el.tags.landuse);
+      if (el.tags?.natural) tags.add(el.tags.natural);
+    }
+
+    const tagList = [...tags].slice(0, 8); // cap at 8
+    if (!tagList.length) return null;
+
+    return {
+      tags: tagList,
+      summary: _describeLandUse(tagList),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function _describeLandUse(tags) {
+  // Map OSM tag values → human-readable labels
+  const TAG_LABELS = {
+    farmland: 'farmland', meadow: 'meadow', forest: 'forest', wood: 'woodland',
+    grass: 'grassland', orchard: 'orchard', vineyard: 'vineyard', garden: 'garden',
+    residential: 'residential', industrial: 'industrial', commercial: 'commercial',
+    scrub: 'scrub', heath: 'heathland', wetland: 'wetland', water: 'open water',
+    beach: 'beach', bare_rock: 'bare rock', glacier: 'glacier', sand: 'sand',
+    allotments: 'allotments', recreation_ground: 'recreation ground',
+    nature_reserve: 'nature reserve', national_park: 'national park',
+  };
+  const labels = tags.map(t => TAG_LABELS[t] || t.replace(/_/g, ' ')).filter(Boolean);
+  return labels.length ? labels.join(', ') : null;
+}
+
+// ── 8. Solar seasonality — from NASA POWER monthly data (Stage 3) ──────
+//
+// Finds the peak and lowest solar months from the monthly_solar array
+// already returned by fetchNASAPower().
+
+function _solarSeasonality(monthlySolar) {
+  if (!monthlySolar?.length) return null;
+  const valid = monthlySolar.filter(m => m.kwh != null);
+  if (!valid.length) return null;
+
+  const peak = valid.reduce((a, b) => b.kwh > a.kwh ? b : a);
+  const low  = valid.reduce((a, b) => b.kwh < a.kwh ? b : a);
+
+  return {
+    peak_month:      peak.month,
+    peak_month_abbr: MONTH_ABBR[peak.month - 1],
+    peak_kwh:        +peak.kwh.toFixed(2),
+    low_month:       low.month,
+    low_month_abbr:  MONTH_ABBR[low.month - 1],
+    low_kwh:         +low.kwh.toFixed(2),
+  };
+}
+
 // ── Climate description helpers ────────────────────────────────────────
 
 function _describeClimate(nasa, elevation) {
@@ -380,7 +583,7 @@ function _solarKw(nasa, sizeStr) {
 // ── Main export ────────────────────────────────────────────────────────
 
 /**
- * Run the full ingestion pipeline (Stage 1 + Stage 2) for a lat/lng.
+ * Run the full ingestion pipeline (Stage 1 + 2 + 3) for a lat/lng.
  * Writes results into APP.property and APP.siteProfile.
  *
  * @param {number} lat
@@ -388,17 +591,22 @@ function _solarKw(nasa, sizeStr) {
  * @returns {Promise<object>} siteProfile
  */
 export async function runIngestion(lat, lng) {
-  // All fetches run in parallel — hardiness is lower priority so we
-  // run it concurrently; if it fails, it gracefully returns null.
-  const [elevation, nasa, meteo, soilGrids] = await Promise.all([
+  // Stage 1 + 2 + 3 fetches all run in parallel.
+  // GBIF and OSM are lower-stakes — failures return null gracefully.
+  const [elevation, nasa, meteo, soilGrids, gbif, landUse] = await Promise.all([
     fetchElevation(lat, lng),
     fetchNASAPower(lat, lng),
     fetchOpenMeteo(lat, lng),
     fetchSoilGrids(lat, lng),
+    fetchGBIF(lat, lng),
+    fetchLandUse(lat, lng),
   ]);
 
   // Hardiness zone runs after NASA (needs temp_min for math fallback)
   const hardiness = await fetchHardinessZone(lat, lng, nasa?.temp_min ?? null);
+
+  // Stage 3: solar seasonality from NASA monthly data
+  const solarSeasonality = _solarSeasonality(nasa?.monthly_solar ?? []);
 
   const soilDesc    = _describeSoil(soilGrids);
   const waterDesc   = _describeWaterBalance(nasa);
@@ -430,6 +638,24 @@ export async function runIngestion(lat, lng) {
     cloud_pct:      nasa?.cloud_pct      ?? null,
     humidity_pct:   nasa?.humidity_pct   ?? null,
     fetched_at:     new Date().toISOString(),
+
+    // ── Stage 3 additions ──────────────────────────────────────────────
+    // Climate normals
+    month_normals:   meteo?.monthNormals    ?? null,
+    growing_months:  meteo?.growingMonths   ?? [],
+    seasons:         meteo?.seasons         ?? null,
+    timezone:        meteo?.timezone        ?? null,
+    // Biodiversity
+    gbif_plant_count:  gbif?.plant_count    ?? null,
+    gbif_animal_count: gbif?.animal_count   ?? null,
+    // Land use context
+    land_use:        landUse?.tags          ?? [],
+    land_use_summary: landUse?.summary      ?? null,
+    // Solar seasonality
+    solar_peak_month:      solarSeasonality?.peak_month_abbr ?? null,
+    solar_peak_kwh:        solarSeasonality?.peak_kwh        ?? null,
+    solar_low_month:       solarSeasonality?.low_month_abbr  ?? null,
+    solar_low_kwh:         solarSeasonality?.low_kwh         ?? null,
   };
 
   // Write enriched strings into APP.property (used by claude.js prompts)
