@@ -386,9 +386,9 @@ function _renderPlantResults() {
 
   if (rtnPlants) { rtnPlants.textContent = APP.plants.length; rtnPlants.classList.add('on'); }
   if (rtnMeds) { rtnMeds.textContent = APP.medicinals.length; rtnMeds.classList.add('on'); }
-  const wc = (APP.wildlife.pollinators?.length || 0)
-    + (APP.wildlife.pestPredators?.length || 0)
-    + (APP.wildlife.browsingAnimals?.length || 0);
+  const wc = (APP.wildlife?.pollinators?.length || 0)
+    + (APP.wildlife?.pestPredators?.length || 0)
+    + (APP.wildlife?.browsingAnimals?.length || 0);
   if (rtnWild) { rtnWild.textContent = wc; rtnWild.classList.add('on'); }
 
   // Filter bar
@@ -415,22 +415,28 @@ function _renderPlantResults() {
   if (medSubtitle) medSubtitle.textContent = `${APP.medicinals.length} species from local observations`;
   const medList = document.getElementById('medList');
   if (medList) {
-    medList.innerHTML = APP.medicinals.map((m, i) => `
-      <div class="medcard" style="animation-delay:${(i * .07).toFixed(2)}s">
-        <div class="mc-n">${m.name}</div>
-        <div class="mc-l">${m.latin}</div>
-        <div class="mc-o">📍 ${m.observationNote}</div>
-        <div class="mc-u">${m.medicinalUses}</div>
-        <div class="mc-c">🌱 ${m.cultivationNote}</div>
-        ${m.caution ? `<div class="mc-w">⚠️ ${m.caution}</div>` : ''}
-      </div>`).join('');
+    medList.innerHTML = APP.medicinals.length
+      ? APP.medicinals.map((m, i) => `
+          <div class="medcard" style="animation-delay:${(i * .07).toFixed(2)}s">
+            <div class="mc-n">${m.name}</div>
+            <div class="mc-l">${m.latin}</div>
+            <div class="mc-o">📍 ${m.observationNote}</div>
+            <div class="mc-u">${m.medicinalUses}</div>
+            <div class="mc-c">🌱 ${m.cultivationNote}</div>
+            ${m.caution ? `<div class="mc-w">⚠️ ${m.caution}</div>` : ''}
+          </div>`).join('')
+      : `<div class="empty-state" style="padding:30px 0">
+           <div class="es-icon">🌿</div>
+           <div class="es-title">No medicinals found</div>
+           <div class="es-sub">Add iNaturalist data or rerun analysis to surface medicinal plants for your region.</div>
+         </div>`;
   }
 
   // Wildlife
-  const w = APP.wildlife;
+  const w = APP.wildlife || {};
   const wildSubtitle = document.getElementById('wildSubtitle');
   if (wildSubtitle) {
-    wildSubtitle.textContent = APP.inatAnimals.length
+    wildSubtitle.textContent = APP.inatAnimals?.length
       ? `Based on ${APP.inatAnimals.length} local iNaturalist observations`
       : `Based on regional knowledge for ${APP.property.address}`;
   }
@@ -439,7 +445,7 @@ function _renderPlantResults() {
     wildList.innerHTML = `
       <div class="eco-card">
         <div class="eco-t">Ecological character</div>
-        <div class="eco-tx">${w.ecologicalSummary || ''}</div>
+        <div class="eco-tx">${w.ecologicalSummary || 'Run analysis to generate wildlife insights for this property.'}</div>
       </div>
       <div class="w-sub"><div class="ws-ico">🐝</div><div class="ws-ttl">Pollinators</div><div class="ws-cnt">${(w.pollinators || []).length} species</div></div>
       ${(w.pollinators || []).map((a, i) => _animalHTML(a, 'poll', i)).join('')}

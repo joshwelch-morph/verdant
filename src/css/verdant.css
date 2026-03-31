@@ -2159,3 +2159,46 @@ body {
   transition: background .15s;
 }
 .tt-dismiss:hover { background: rgba(91,163,116,.4); }
+
+/* ══ Mobile breakpoints (< 380px narrow screens) ══════════════════════ */
+@media (max-width: 380px) {
+  /* Setup screen — goal grid to single column */
+  .goal-grid { grid-template-columns: 1fr; }
+
+  /* Gauge grid — single column on very small screens */
+  .gauge-grid { grid-template-columns: 1fr 1fr; gap: 7px; padding: 0 10px; }
+  .gauge-svg  { width: 80px; height: 70px; }
+
+  /* Report scores — tighter */
+  .rh-scores { gap: 8px; padding: 0 10px; }
+
+  /* Design overview — 2-col on narrow */
+  .dash-overview { grid-template-columns: 1fr 1fr; }
+
+  /* Risk strip — stack vertically */
+  .dash-risk-strip { flex-direction: column; }
+
+  /* iNat cards — slightly narrower */
+  .inat-card { width: 68px; }
+  .inat-card-photo { width: 68px; height: 50px; }
+
+  /* Shared view banner — compact */
+  .shared-view-banner { padding: 10px; gap: 7px; }
+
+  /* Report site strip — full width items */
+  .report-site-strip { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 350px) {
+  /* Plant cards — reduce padding */
+  .pcard { margin: 0 8px 8px; }
+  .phead { padding: 10px; }
+  .pbody { padding: 10px; }
+
+  /* Topbar title sizing */
+  .page-title { font-size: 17px; }
+  .page-sub   { font-size: 10px; }
+
+  /* Gauge widget padding */
+  .gauge-widget { padding: 10px 8px 7px; }
+}
