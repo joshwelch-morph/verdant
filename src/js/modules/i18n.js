@@ -70,6 +70,13 @@ const TRANSLATIONS = {
   'goal.medicinals':       { en: '🌿 Medicinal plants',                                       es: '🌿 Plantas medicinales' },
   'goal.carbon':           { en: '🌳 Carbon storage',                                         es: '🌳 Almacenamiento de carbono' },
 
+  // ── Screen page-titles (HTML — use data-i18n-html) ──
+  'plants.title.html':     { en: 'Matched to <em>your land</em>',                             es: 'Adaptado a <em>tu terreno</em>' },
+  'design.title.html':     { en: 'Your <em>design plan</em>',                                 es: 'Tu <em>plan de diseño</em>' },
+  'calendar.title.html':   { en: '<em>Maintenance</em> calendar',                             es: 'Calendario de <em>mantenimiento</em>' },
+  'overview.title.html':   { en: '<em>Ecosystem</em> overview',                               es: 'Resumen del <em>ecosistema</em>' },
+  'report.title.html':     { en: 'Your <em>report</em>',                                      es: 'Tu <em>informe</em>' },
+
   // ── Nav tabs ──
   'nav.map':               { en: 'Map',                                                       es: 'Mapa' },
   'nav.plants':            { en: 'Plants',                                                    es: 'Plantas' },
@@ -191,6 +198,11 @@ export function applyTranslations() {
     const key = el.dataset.i18n;
     el.textContent = t(key);
   });
+  // data-i18n-html: like data-i18n but sets innerHTML (for titles with <em> etc.)
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.dataset.i18nHtml;
+    el.innerHTML = t(key);
+  });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.placeholder = t(el.dataset.i18nPlaceholder);
   });
@@ -205,32 +217,33 @@ export function applyTranslations() {
 // ── Language toggle UI ───────────────────────────────────────────────────────
 
 /**
- * Inject the language toggle into the topbar (called once from app.js).
+ * Inject the language toggle into every screen topbar.
+ * Each .screen has its own .topbar — we add a toggle to each so it's
+ * always visible regardless of which screen is active.
+ * Called once from app.js after the nav is shown.
  */
 export function initLangToggle() {
-  // Find the topbar — inject toggle before the end
-  const topbar = document.querySelector('.topbar, #appTopbar, .tb-right');
-  if (!topbar) return;
+  // Remove any existing toggles first (idempotent)
+  document.querySelectorAll('.lang-toggle').forEach(el => el.remove());
 
-  // Don't double-insert
-  if (document.getElementById('lang-toggle')) return;
-
-  const wrap = document.createElement('div');
-  wrap.id    = 'lang-toggle';
-  wrap.className = 'lang-toggle';
-  wrap.innerHTML = LANGUAGES.map(l =>
+  const btnHTML = LANGUAGES.map(l =>
     `<button class="lang-btn ${l.code === _lang ? 'lang-active' : ''}" data-lang="${l.code}" title="${l.name}">${l.label}</button>`
   ).join('');
 
-  // Insert at the end of topbar (or append to body header area)
-  const tbRight = document.querySelector('.tb-right') || topbar;
-  tbRight.appendChild(wrap);
+  // Inject into every screen topbar
+  document.querySelectorAll('.screen .topbar').forEach(topbar => {
+    const wrap = document.createElement('div');
+    wrap.className = 'lang-toggle';
+    wrap.innerHTML = btnHTML;
 
-  // Wire click
-  wrap.addEventListener('click', e => {
-    const btn = e.target.closest('.lang-btn');
-    if (!btn) return;
-    setLang(btn.dataset.lang);
+    // Wire click — one handler per wrap
+    wrap.addEventListener('click', e => {
+      const btn = e.target.closest('.lang-btn');
+      if (!btn) return;
+      setLang(btn.dataset.lang);
+    });
+
+    topbar.appendChild(wrap);
   });
 
   applyTranslations();

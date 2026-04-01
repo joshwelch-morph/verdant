@@ -17,61 +17,61 @@
   <div class="setup-inner">
     <div class="setup-emblem">🌿</div>
     <div class="setup-title">Welcome to <em>Verdant</em></div>
-    <div class="setup-sub">Regenerative land design powered by ecological intelligence. Let's set up your workspace.</div>
+    <div class="setup-sub" data-i18n="setup.tagline">Regenerative land design powered by ecological intelligence. Let's set up your workspace.</div>
 
     <div class="setup-card">
-      <div class="setup-card-title">API Configuration</div>
+      <div class="setup-card-title" data-i18n="setup.api_config">API Configuration</div>
       <div class="setup-field">
-        <div class="setup-label">Anthropic API Key</div>
+        <div class="setup-label" data-i18n="setup.api_key">Anthropic API Key</div>
         <input class="setup-input" id="apiKey" type="password" placeholder="sk-ant-…" autocomplete="off">
-        <div class="setup-hint">Your key is used only in this session and never stored. <a href="https://console.anthropic.com" target="_blank">Get a key →</a></div>
+        <div class="setup-hint" data-i18n="setup.api_key_note">Your key is used only in this session and never stored.</div>
       </div>
       <div class="setup-field">
-        <div class="setup-label">Mapbox Token <span style="color:var(--muted2);font-weight:400">(optional — for satellite map)</span></div>
+        <div class="setup-label" data-i18n="setup.mapbox">Mapbox Token <span style="color:var(--muted2);font-weight:400" data-i18n="setup.mapbox_note">(optional — for satellite map)</span></div>
         <input class="setup-input" id="mapboxToken" type="text" placeholder="pk.eyJ1…" autocomplete="off">
         <div class="setup-hint"><a href="https://account.mapbox.com/access-tokens/" target="_blank">Get a free token at mapbox.com →</a></div>
       </div>
     </div>
 
     <div class="setup-card">
-      <div class="setup-card-title">Property Details</div>
+      <div class="setup-card-title" data-i18n="setup.property">Property Details</div>
       <div class="setup-field">
-        <div class="setup-label">Property Name</div>
+        <div class="setup-label" data-i18n="setup.name">Property Name</div>
         <input class="setup-input" id="propName" placeholder="e.g. Hillside Creek Property" value="Hillside Creek Property">
       </div>
       <div class="setup-field">
-        <div class="setup-label">Location / Address</div>
+        <div class="setup-label" data-i18n="setup.location">Location / Address</div>
         <input class="setup-input" id="propAddress" placeholder="e.g. Daylesford, Victoria, Australia" value="Daylesford, Victoria, Australia">
       </div>
       <div class="setup-field">
-        <div class="setup-label">Size</div>
+        <div class="setup-label" data-i18n="setup.size">Size</div>
         <input class="setup-input" id="propSize" placeholder="e.g. 3.4 acres" value="3.4 acres">
       </div>
       <div class="setup-field">
-        <div class="setup-label">Soil type (if known)</div>
+        <div class="setup-label" data-i18n="setup.soil">Soil type (if known)</div>
         <input class="setup-input" id="propSoil" placeholder="e.g. Clay-loam, sandy, volcanic" value="Clay-loam, pH 6.2">
       </div>
       <div class="setup-field">
-        <div class="setup-label">Water features</div>
+        <div class="setup-label" data-i18n="setup.water">Water features</div>
         <input class="setup-input" id="propWater" placeholder="e.g. Seasonal creek, bore, dam" value="Seasonal creek on eastern boundary">
       </div>
     </div>
 
     <div class="setup-card">
-      <div class="setup-card-title">Primary Goals</div>
+      <div class="setup-card-title" data-i18n="setup.goals">Primary Goals</div>
       <div class="goal-grid" id="goalGrid">
-        <div class="goal-pill on" data-g="food abundance">🍎 Food abundance</div>
-        <div class="goal-pill on" data-g="water security">💧 Water security</div>
-        <div class="goal-pill" data-g="income from land">💰 Income from land</div>
-        <div class="goal-pill on" data-g="wildlife habitat">🦋 Wildlife habitat</div>
-        <div class="goal-pill on" data-g="soil restoration">🪱 Soil restoration</div>
-        <div class="goal-pill" data-g="low maintenance">⏱ Low maintenance</div>
-        <div class="goal-pill on" data-g="medicinal plants">🌿 Medicinal plants</div>
-        <div class="goal-pill" data-g="carbon sequestration">🌳 Carbon storage</div>
+        <div class="goal-pill on" data-g="food abundance" data-i18n="goal.food">🍎 Food abundance</div>
+        <div class="goal-pill on" data-g="water security" data-i18n="goal.water">💧 Water security</div>
+        <div class="goal-pill" data-g="income from land" data-i18n="goal.income">💰 Income from land</div>
+        <div class="goal-pill on" data-g="wildlife habitat" data-i18n="goal.wildlife">🦋 Wildlife habitat</div>
+        <div class="goal-pill on" data-g="soil restoration" data-i18n="goal.soil">🪱 Soil restoration</div>
+        <div class="goal-pill" data-g="low maintenance" data-i18n="goal.maintenance">⏱ Low maintenance</div>
+        <div class="goal-pill on" data-g="medicinal plants" data-i18n="goal.medicinals">🌿 Medicinal plants</div>
+        <div class="goal-pill" data-g="carbon sequestration" data-i18n="goal.carbon">🌳 Carbon storage</div>
       </div>
     </div>
 
-    <button class="btn btn-primary btn-full" style="margin-top:4px;padding:15px;font-size:16px" id="startBtn">
+    <button class="btn btn-primary btn-full" style="margin-top:4px;padding:15px;font-size:16px" id="startBtn" data-i18n="setup.begin">
       Begin Design ›
     </button>
     <div style="height:20px"></div>
@@ -205,8 +205,8 @@
 <div class="screen" id="s2">
   <div class="topbar">
     <div class="logo">🌿 Verdant</div>
-    <div class="page-title">Matched to <em>your land</em></div>
-    <div class="page-sub" id="plantSub">Fetch local wildlife data, then analyse</div>
+    <div class="page-title" data-i18n-html="plants.title.html">Matched to <em>your land</em></div>
+    <div class="page-sub" id="plantSub" data-i18n="plants.sub">Fetch local wildlife data, then analyse</div>
   </div>
   <div class="screen-body">
 
@@ -320,8 +320,8 @@
 <div class="screen" id="s3">
   <div class="topbar">
     <div class="logo">🌿 Verdant</div>
-    <div class="page-title">Your <em>design plan</em></div>
-    <div class="page-sub">Guilds, systems & companion plantings</div>
+    <div class="page-title" data-i18n-html="design.title.html">Your <em>design plan</em></div>
+    <div class="page-sub" data-i18n="design.sub">Guilds, systems & companion plantings</div>
   </div>
   <div class="screen-body">
 
@@ -355,8 +355,8 @@
 <div class="screen" id="s4">
   <div class="topbar">
     <div class="logo">🌿 Verdant</div>
-    <div class="page-title"><em>Maintenance</em> calendar</div>
-    <div class="page-sub">What to do, when — and how long it takes</div>
+    <div class="page-title" data-i18n-html="calendar.title.html"><em>Maintenance</em> calendar</div>
+    <div class="page-sub" data-i18n="calendar.sub">What to do, when — and how long it takes</div>
   </div>
   <div class="screen-body">
     <div class="sec-label">Annual Effort</div>
@@ -380,8 +380,8 @@
 <div class="screen" id="s6">
   <div class="topbar">
     <div class="logo">🌿 Verdant</div>
-    <div class="page-title"><em>Ecosystem</em> overview</div>
-    <div class="page-sub" id="dashSub">Your property at a glance</div>
+    <div class="page-title" data-i18n-html="overview.title.html"><em>Ecosystem</em> overview</div>
+    <div class="page-sub" id="dashSub" data-i18n="overview.vitals">Your property at a glance</div>
   </div>
   <div class="screen-body" id="dashContent" style="padding-bottom:0">
     <!-- populated by dashboard.js -->
@@ -392,8 +392,8 @@
 <div class="screen" id="s5">
   <div class="topbar">
     <div class="logo">🌿 Verdant</div>
-    <div class="page-title">Your <em>report</em></div>
-    <div class="page-sub">Share or save your regenerative design</div>
+    <div class="page-title" data-i18n-html="report.title.html">Your <em>report</em></div>
+    <div class="page-sub" data-i18n="report.sub">Share or save your regenerative design</div>
   </div>
   <div class="screen-body">
 
@@ -458,24 +458,24 @@
 <nav id="appNav">
   <div class="nav-items">
     <button class="ni" id="n-s1" data-screen="s1">
-      <span class="ni-icon">🗺️</span><span>Map</span>
+      <span class="ni-icon">🗺️</span><span data-i18n="nav.map">Map</span>
       <span class="ni-badge on" id="nb-map">0</span>
     </button>
     <button class="ni" id="n-s2" data-screen="s2">
-      <span class="ni-icon">🌿</span><span>Plants</span>
+      <span class="ni-icon">🌿</span><span data-i18n="nav.plants">Plants</span>
       <span class="ni-badge" id="nb-plants">0</span>
     </button>
     <button class="ni" id="n-s3" data-screen="s3">
-      <span class="ni-icon">📋</span><span>Design</span>
+      <span class="ni-icon">📋</span><span data-i18n="nav.design">Design</span>
     </button>
     <button class="ni" id="n-s4" data-screen="s4">
-      <span class="ni-icon">📅</span><span>Calendar</span>
+      <span class="ni-icon">📅</span><span data-i18n="nav.calendar">Calendar</span>
     </button>
     <button class="ni" id="n-s6" data-screen="s6">
-      <span class="ni-icon">🌿</span><span>Overview</span>
+      <span class="ni-icon">🌿</span><span data-i18n="nav.overview">Overview</span>
     </button>
     <button class="ni" id="n-s5" data-screen="s5">
-      <span class="ni-icon">📄</span><span>Report</span>
+      <span class="ni-icon">📄</span><span data-i18n="nav.report">Report</span>
     </button>
   </div>
 </nav>

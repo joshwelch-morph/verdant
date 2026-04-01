@@ -337,11 +337,10 @@ export function renderPlan() {
     });
   });
 
-  _wireBrowseBtn();
-}
-
   // Honesty / data quality banner
   renderHonestyBanner('plan', 'planContent');
+
+  _wireBrowseBtn();
 }
 
 // ── Browse button wiring ─────────────────────────────────────────────────────
