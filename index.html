@@ -85,11 +85,13 @@
   <div id="verdantMap" style="position:absolute;inset:0;"></div>
 
   <!-- Top HUD -->
-  <div style="position:absolute;top:0;left:0;right:0;z-index:50;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,rgba(8,14,5,.88) 0%,transparent 100%);pointer-events:none;">
+  <div id="map-topbar" class="topbar" style="position:absolute;top:0;left:0;right:0;z-index:50;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,rgba(8,14,5,.88) 0%,transparent 100%);pointer-events:none;">
     <div style="font-family:'Lora',serif;font-size:18px;color:#90d060;display:flex;align-items:center;gap:7px;pointer-events:all;">🌿 Verdant</div>
-    <div style="background:rgba(12,20,8,.92);border:1px solid var(--border);border-radius:30px;padding:5px 13px;font-size:11px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:6px;pointer-events:all;">
-      <div style="width:6px;height:6px;border-radius:50%;background:var(--green);animation:ldot 2s infinite"></div>
-      <span id="mapPropBadge">My Property</span>
+    <div style="display:flex;align-items:center;gap:8px;pointer-events:all;">
+      <div style="background:rgba(12,20,8,.92);border:1px solid var(--border);border-radius:30px;padding:5px 13px;font-size:11px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:6px;">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--green);animation:ldot 2s infinite"></div>
+        <span id="mapPropBadge">My Property</span>
+      </div>
     </div>
   </div>
 

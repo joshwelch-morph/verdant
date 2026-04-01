@@ -136,6 +136,7 @@ const TRANSLATIONS = {
   'pb.poor':               { en: '❌ Not suited',                                             es: '❌ No apto' },
   'pb.zone_missing':       { en: '📍 Run analysis for zone matching',                         es: '📍 Ejecuta análisis para comparar zonas' },
   'pb.run_analysis':       { en: 'Run analysis for zone matching',                            es: 'Ejecutar análisis para comparar zonas' },
+  'pb.no_results':         { en: 'No plants match your search. Try a different name or category.', es: 'Ninguna planta coincide. Intenta otro nombre o categoría.' },
 
   // ── Honesty banner ──
   'honesty.starting_point':{ en: 'This is a starting point.',                                es: 'Esto es un punto de partida.' },

@@ -17,6 +17,7 @@
  */
 
 import { APP } from './state.js';
+import { t } from './i18n.js';
 
 // ── Module state ────────────────────────────────────────────────────────────
 let _allPlants = [];        // raw JSON array
@@ -156,12 +157,12 @@ function _filtered() {
 // ── Badge HTML ──────────────────────────────────────────────────────────────
 function _badgeHTML(assessment) {
   if (assessment.level === 'great') {
-    return `<span class="pb-badge pb-badge-great">✅ Thrives here</span>`;
+    return `<span class="pb-badge pb-badge-great">${t('pb.thrives')}</span>`;
   }
   if (assessment.level === 'marginal') {
-    return `<span class="pb-badge pb-badge-marginal">⚠️ Marginal</span>`;
+    return `<span class="pb-badge pb-badge-marginal">${t('pb.marginal')}</span>`;
   }
-  return `<span class="pb-badge pb-badge-poor">❌ Not suited</span>`;
+  return `<span class="pb-badge pb-badge-poor">${t('pb.poor')}</span>`;
 }
 
 function _suitabilityTooltip(assessment) {
@@ -207,7 +208,7 @@ function _cardHTML(plant) {
   ${plant.notes ? `<div class="pb-card-notes">${plant.notes}</div>` : ''}
   ${a.allNotes.length ? `<div class="pb-suit-notes pb-suit-notes-${a.level}">${a.allNotes.slice(0,2).join(' · ')}</div>` : ''}
   <button class="pb-add-btn ${isAdded ? 'pb-add-btn-added' : ''}" data-id="${plant.id}">
-    ${isAdded ? '✓ Added' : '+ Add to Plan'}
+    ${isAdded ? t('pb.added') : t('pb.add')}
   </button>
 </div>`;
 }
@@ -234,7 +235,7 @@ function _renderBrowser() {
 
   const zoneChip = zoneStr
     ? `<span class="pb-zone-chip">📍 ${zoneStr}</span>`
-    : `<span class="pb-zone-chip pb-zone-missing">📍 Run analysis for zone matching</span>`;
+    : `<span class="pb-zone-chip pb-zone-missing">📍 ${t('pb.run_analysis')}</span>`;
 
   overlay.innerHTML = `
 <div class="pb-drawer">
@@ -242,8 +243,8 @@ function _renderBrowser() {
     <div class="pb-drawer-title">
       <span class="pb-drawer-ico">🌿</span>
       <div>
-        <div class="pb-drawer-h">Plant Browser</div>
-        <div class="pb-drawer-sub">${_allPlants.length} plants · rated for your site ${zoneChip}</div>
+        <div class="pb-drawer-h">${t('pb.title')}</div>
+        <div class="pb-drawer-sub">${_allPlants.length} ${t('pb.shown')} ${zoneChip}</div>
       </div>
     </div>
     <button class="pb-close-btn" id="pb-close">✕</button>
@@ -254,7 +255,7 @@ function _renderBrowser() {
       class="pb-search"
       id="pb-search"
       type="text"
-      placeholder="Search by name, role, or type…"
+      placeholder="${t('pb.search')}"
       value="${_query}"
       autocomplete="off"
     />
@@ -263,7 +264,7 @@ function _renderBrowser() {
     </div>
   </div>
 
-  <div class="pb-results-count">${plants.length} plant${plants.length !== 1 ? 's' : ''} shown</div>
+  <div class="pb-results-count">${plants.length} ${t('pb.shown')}</div>
 
   <div class="pb-grid" id="pb-grid">
     ${plants.length
@@ -306,12 +307,12 @@ function _renderBrowser() {
     if (alreadyAdded) {
       APP.addedPlants.delete(plant.id);
       APP.addedPlants.delete(plant.name);
-      btn.textContent = '+ Add to Plan';
+      btn.textContent = t('pb.add');
       btn.classList.remove('pb-add-btn-added');
       btn.closest('.pb-card').classList.remove('pb-card-added');
     } else {
       APP.addedPlants.add(plant.id);
-      btn.textContent = '✓ Added';
+      btn.textContent = t('pb.added');
       btn.classList.add('pb-add-btn-added');
       btn.closest('.pb-card').classList.add('pb-card-added');
       // Fire callback if registered
@@ -325,10 +326,10 @@ function _refreshGrid() {
   const count  = document.querySelector('.pb-results-count');
   if (!grid) return;
   const plants = _filtered();
-  if (count) count.textContent = `${plants.length} plant${plants.length !== 1 ? 's' : ''} shown`;
+  if (count) count.textContent = `${plants.length} ${t('pb.shown')}`;
   grid.innerHTML = plants.length
     ? plants.map(_cardHTML).join('')
-    : `<div class="pb-empty">No plants match your search.</div>`;
+    : `<div class="pb-empty">${t('pb.no_results')}</div>`;
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────

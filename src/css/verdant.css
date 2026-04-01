@@ -2710,6 +2710,24 @@ body {
   color: #fff;
 }
 
+/* Map screen dark topbar override — the map HUD has a dark gradient bg */
+#map-topbar .lang-toggle {
+  background: rgba(12, 20, 8, 0.88);
+  border-color: rgba(85, 176, 37, 0.25);
+  pointer-events: all;
+}
+#map-topbar .lang-btn {
+  color: rgba(160, 220, 96, 0.75);
+}
+#map-topbar .lang-btn:hover {
+  background: rgba(85, 176, 37, 0.15);
+  color: #a0e060;
+}
+#map-topbar .lang-btn.lang-active {
+  background: rgba(85, 176, 37, 0.3);
+  color: #a0e060;
+}
+
 /* ══════════════════════════════════════════
    SETTINGS NAV BUTTON
 ══════════════════════════════════════════ */
