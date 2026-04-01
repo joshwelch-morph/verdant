@@ -477,8 +477,45 @@
     <button class="ni" id="n-s5" data-screen="s5">
       <span class="ni-icon">📄</span><span data-i18n="nav.report">Report</span>
     </button>
+    <button class="ni ni-settings" id="n-settings">
+      <span class="ni-icon">⚙️</span><span data-i18n="nav.settings">Settings</span>
+    </button>
   </div>
 </nav>
+
+<!-- ══ SETTINGS MODAL ══ -->
+<div id="settingsModal" class="smodal-backdrop" style="display:none">
+  <div class="smodal">
+    <div class="smodal-head">
+      <div class="smodal-title">⚙️ <span data-i18n="settings.title">Settings</span></div>
+      <button class="smodal-close" id="settingsClose">✕</button>
+    </div>
+
+    <div class="smodal-section">
+      <div class="smodal-label" data-i18n="settings.api_key">Anthropic API Key</div>
+      <input class="smodal-input" id="settingsApiKey" type="password" placeholder="sk-ant-…" autocomplete="off">
+      <div class="smodal-hint" data-i18n="settings.api_hint">Session only — never stored. Required for AI analysis.</div>
+    </div>
+
+    <div class="smodal-section">
+      <div class="smodal-label" data-i18n="settings.mapbox">Mapbox Token <span style="font-weight:400;color:var(--muted2)" data-i18n="settings.mapbox_note">(optional — satellite map)</span></div>
+      <input class="smodal-input" id="settingsMapbox" type="text" placeholder="pk.eyJ1…" autocomplete="off">
+    </div>
+
+    <div class="smodal-section">
+      <div class="smodal-label" data-i18n="settings.property">Property</div>
+      <div class="smodal-prop-row">
+        <span class="smodal-prop-name" id="settingsPropName">—</span>
+        <span class="smodal-prop-addr" id="settingsPropAddr">—</span>
+      </div>
+    </div>
+
+    <div class="smodal-actions">
+      <button class="smodal-save" id="settingsSave" data-i18n="settings.save">Save</button>
+      <button class="smodal-reset" id="settingsReset" data-i18n="settings.new_session">New session</button>
+    </div>
+  </div>
+</div>
 
 <div id="toast"><span id="t-i">✅</span> <span id="t-m">Done</span></div>
 

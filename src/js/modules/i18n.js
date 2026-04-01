@@ -155,6 +155,19 @@ const TRANSLATIONS = {
   'slope.steep':           { en: 'steep',                                                     es: 'pronunciado' },
   'slope.very_steep':      { en: 'very steep',                                                es: 'muy pronunciado' },
 
+  // ── Nav settings ──
+  'nav.settings':          { en: 'Settings',                                                  es: 'Ajustes' },
+
+  // ── Settings modal ──
+  'settings.title':        { en: 'Settings',                                                  es: 'Ajustes' },
+  'settings.api_key':      { en: 'Anthropic API Key',                                         es: 'Clave API de Anthropic' },
+  'settings.api_hint':     { en: 'Session only — never stored. Required for AI analysis.',    es: 'Solo para esta sesión — nunca se guarda. Necesaria para el análisis IA.' },
+  'settings.mapbox':       { en: 'Mapbox Token',                                              es: 'Token de Mapbox' },
+  'settings.mapbox_note':  { en: '(optional — satellite map)',                                es: '(opcional — mapa satelital)' },
+  'settings.property':     { en: 'Property',                                                  es: 'Propiedad' },
+  'settings.save':         { en: 'Save',                                                      es: 'Guardar' },
+  'settings.new_session':  { en: 'New session',                                               es: 'Nueva sesión' },
+
   // ── Common actions ──
   'action.save':           { en: 'Save',                                                      es: 'Guardar' },
   'action.reset':          { en: 'Reset',                                                     es: 'Reiniciar' },

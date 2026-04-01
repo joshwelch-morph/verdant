@@ -585,6 +585,55 @@ function _showError(msg) {
   document.getElementById('plantsEmpty').style.display = 'none';
 }
 
+// ── Settings modal ───────────────────────────────────────────────────────
+
+(function _initSettings() {
+  const modal    = document.getElementById('settingsModal');
+  const openBtn  = document.getElementById('n-settings');
+  const closeBtn = document.getElementById('settingsClose');
+  const saveBtn  = document.getElementById('settingsSave');
+  const resetBtn = document.getElementById('settingsReset');
+  if (!modal || !openBtn) return;
+
+  function _openSettings() {
+    // Pre-fill current values
+    const apiInput    = document.getElementById('settingsApiKey');
+    const mapboxInput = document.getElementById('settingsMapbox');
+    const propName    = document.getElementById('settingsPropName');
+    const propAddr    = document.getElementById('settingsPropAddr');
+    if (apiInput)    apiInput.value    = APP.apiKey    || '';
+    if (mapboxInput) mapboxInput.value = APP.mapboxToken || '';
+    if (propName)    propName.textContent  = APP.property?.name    || '—';
+    if (propAddr)    propAddr.textContent  = APP.property?.address || '—';
+    modal.style.display = 'flex';
+  }
+
+  function _closeSettings() {
+    modal.style.display = 'none';
+  }
+
+  openBtn.addEventListener('click', _openSettings);
+  closeBtn.addEventListener('click', _closeSettings);
+
+  // Close on backdrop click
+  modal.addEventListener('click', e => { if (e.target === modal) _closeSettings(); });
+
+  saveBtn.addEventListener('click', () => {
+    const key    = document.getElementById('settingsApiKey')?.value.trim();
+    const mapbox = document.getElementById('settingsMapbox')?.value.trim();
+    if (key)    APP.apiKey       = key;
+    if (mapbox) APP.mapboxToken  = mapbox;
+    _closeSettings();
+    toast('Settings saved', '✅');
+  });
+
+  resetBtn.addEventListener('click', () => {
+    if (!confirm('Start a new session? Your current design will be cleared.')) return;
+    clearState();
+    location.reload();
+  });
+})();
+
 // ── Calendar ────────────────────────────────────────────────────────────
 wireSeasonTabs();
 

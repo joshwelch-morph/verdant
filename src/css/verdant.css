@@ -2709,3 +2709,168 @@ body {
   background: var(--primary);
   color: #fff;
 }
+
+/* ══════════════════════════════════════════
+   SETTINGS NAV BUTTON
+══════════════════════════════════════════ */
+.ni-settings {
+  opacity: 0.75;
+}
+.ni-settings:hover {
+  opacity: 1;
+}
+
+/* ══════════════════════════════════════════
+   SETTINGS MODAL
+   Slide-up sheet for entering API key
+   and Mapbox token mid-session.
+══════════════════════════════════════════ */
+.smodal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.smodal {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 560px;
+  padding: 0 0 env(safe-area-inset-bottom, 16px);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.18);
+  animation: smodal-up 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes smodal-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.smodal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.smodal-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.smodal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--muted);
+  padding: 4px 6px;
+  border-radius: 8px;
+  transition: background .15s;
+}
+.smodal-close:hover { background: var(--card2); }
+
+.smodal-section {
+  padding: 14px 20px 4px;
+}
+
+.smodal-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.smodal-input {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1.5px solid var(--border2);
+  border-radius: 10px;
+  background: var(--card2);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s;
+}
+.smodal-input:focus {
+  border-color: var(--primary);
+  background: var(--surface);
+}
+
+.smodal-hint {
+  font-size: 11px;
+  color: var(--muted2);
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+.smodal-prop-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 13px;
+  background: var(--card2);
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+}
+
+.smodal-prop-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.smodal-prop-addr {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.smodal-actions {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px 20px;
+}
+
+.smodal-save {
+  flex: 1;
+  padding: 12px 0;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .15s;
+}
+.smodal-save:hover { background: var(--primary-dk); }
+
+.smodal-reset {
+  padding: 12px 18px;
+  background: none;
+  border: 1.5px solid var(--border2);
+  border-radius: 12px;
+  color: var(--muted);
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.smodal-reset:hover {
+  border-color: #dc2626;
+  color: #dc2626;
+}
