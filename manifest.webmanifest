@@ -1,0 +1,27 @@
+{
+  "name": "Verdant — Regenerative Land Design",
+  "short_name": "Verdant",
+  "description": "Regenerative land design powered by ecological intelligence.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F6F7F5",
+  "theme_color": "#5C7F6E",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "src/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "src/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "education", "lifestyle"],
+  "screenshots": []
+}
