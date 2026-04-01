@@ -14,6 +14,7 @@
 
 import { APP } from './state.js';
 import { clearState, getSavedAt } from './persist.js';
+import { renderHonestyBanner } from './honesty.js';
 
 // ── Gauge helper ───────────────────────────────────────────────────────
 
@@ -359,6 +360,43 @@ export function renderDashboard() {
       </div>
     </div>` : ''}
 
+    <!-- Terrain Analysis strip (3DEP LiDAR data) -->
+    ${sp?.terrain ? `
+    <div class="sec-label" style="margin-top:4px">Terrain Analysis
+      <span class="sl-sub" style="font-size:10px;opacity:.7">${sp.terrain.quality?.label || ''} · ${sp.terrain.quality?.source || ''}</span>
+    </div>
+    <div class="terrain-strip">
+      <div class="ts-cell">
+        <div class="ts-ico">⛰️</div>
+        <div class="ts-body">
+          <div class="ts-val">${sp.terrain.elevation_min ?? '?'}–${sp.terrain.elevation_max ?? '?'}m</div>
+          <div class="ts-lbl">Elevation range</div>
+        </div>
+      </div>
+      <div class="ts-cell">
+        <div class="ts-ico">📐</div>
+        <div class="ts-body">
+          <div class="ts-val">${sp.terrain.slope_avg_pct != null ? sp.terrain.slope_avg_pct + '%' : '–'}</div>
+          <div class="ts-lbl">${sp.terrain.slope_desc || 'Avg slope'}</div>
+        </div>
+      </div>
+      <div class="ts-cell">
+        <div class="ts-ico">🧭</div>
+        <div class="ts-body">
+          <div class="ts-val">${sp.terrain.aspect_cardinal || '–'}</div>
+          <div class="ts-lbl">Aspect (faces)</div>
+        </div>
+      </div>
+      ${sp.terrain.swale_points?.length ? `
+      <div class="ts-cell">
+        <div class="ts-ico">💧</div>
+        <div class="ts-body">
+          <div class="ts-val">${sp.terrain.swale_points.length}</div>
+          <div class="ts-lbl">Swale zone${sp.terrain.swale_points.length !== 1 ? 's' : ''} found</div>
+        </div>
+      </div>` : ''}
+    </div>` : ''}
+
     <!-- Site Metrics -->
     <div class="sec-label" style="margin-top:4px">Site Conditions</div>
     <div class="site-metrics">
@@ -484,4 +522,7 @@ export function renderDashboard() {
 
   // Trigger animations after browser has painted the new DOM
   requestAnimationFrame(() => requestAnimationFrame(_animateDashboard));
+
+  // Honesty / data quality banner
+  renderHonestyBanner('dashboard', 'dashContent');
 }

@@ -2529,3 +2529,183 @@ body {
   border-color: #3d6b47 !important;
   color: #fff !important;
 }
+
+/* ══════════════════════════════════════════
+   TERRAIN ANALYSIS STRIP
+   Displayed on Dashboard between the Stage 3
+   stats row and the Site Conditions section.
+══════════════════════════════════════════ */
+.terrain-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+
+@media (max-width: 600px) {
+  .terrain-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.ts-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 8px 8px;
+  text-align: center;
+}
+
+.ts-ico {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.ts-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.ts-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ══════════════════════════════════════════
+   HONESTY BANNER
+   Prominent data-quality + honesty statement
+   shown on Dashboard, Plan, and Report screens.
+   Session-dismissible only (resets on reload).
+══════════════════════════════════════════ */
+.hb-banner {
+  margin: 14px 0 8px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border2);
+  background: var(--card);
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(31,41,51,.06);
+}
+
+.hb-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Data-quality row (coloured left accent) */
+.hb-data-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-left: 4px solid var(--primary);
+}
+.hb-data-row.hb-res-high   { border-left-color: #22c55e; background: rgba(34,197,94,.06); }
+.hb-data-row.hb-res-medium { border-left-color: var(--accent); background: rgba(221,161,94,.07); }
+.hb-data-row.hb-res-low    { border-left-color: #dc2626; background: rgba(220,38,38,.06); }
+
+.hb-data-text {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* Resolution badge pill */
+.hb-res-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.hb-res-high   .hb-res-badge { background: #dcfce7; color: #15803d; }
+.hb-res-medium .hb-res-badge { background: #fef3c7; color: #92400e; }
+.hb-res-low    .hb-res-badge { background: #fee2e2; color: #b91c1c; }
+
+/* Dismiss button */
+.hb-dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--muted2);
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color .15s;
+}
+.hb-dismiss:hover { color: var(--muted); }
+
+/* Thin divider between rows */
+.hb-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0;
+}
+
+/* Honesty statement row */
+.hb-honesty-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 14px;
+}
+
+.hb-honesty-text {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ══════════════════════════════════════════
+   LANGUAGE TOGGLE  (EN | ES)
+   Injected into .tb-right by i18n.js
+══════════════════════════════════════════ */
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 2px;
+  margin-left: 10px;
+}
+
+.lang-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  transition: background .15s, color .15s;
+}
+
+.lang-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.lang-btn.lang-active {
+  background: var(--primary);
+  color: #fff;
+}

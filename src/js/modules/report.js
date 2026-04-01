@@ -16,6 +16,7 @@
 import { APP } from './state.js';
 import { toast } from './ui.js';
 import { generateReportNarrative } from './claude.js';
+import { renderHonestyBanner } from './honesty.js';
 
 // Cache the narrative so we don't regenerate on every nav
 let _cachedNarrative = null;
@@ -131,6 +132,9 @@ export function renderReport() {
 
   // ── Export buttons ──
   _wireExportButtons();
+
+  // ── Honesty / data quality banner ──
+  renderHonestyBanner('report', 's5');
 }
 
 function _setScore(id, text, pct, color) {
@@ -156,7 +160,9 @@ function _renderSiteStrip(sp, p, s) {
     { icon: '💧',  label: 'Root Zone', val: sp?.water_balance || (sp?.gwetroot != null ? `${sp.gwetroot} wetness` : '–') },
     { icon: '☀️',  label: 'Solar',     val: sp?.solar_kwh_day ? `${sp.solar_kwh_day} kWh/m²/d` : '–' },
     { icon: '🪱',  label: 'Soil',      val: p.soil || sp?.soil_desc || '–' },
-    { icon: '📐',  label: 'Elevation', val: sp?.elevation ? `${Math.round(sp.elevation)}m asl` : (p.slope || '–') },
+    { icon: '📐',  label: 'Elevation', val: sp?.terrain
+        ? `${sp.terrain.elevation_min ?? '?'}–${sp.terrain.elevation_max ?? '?'}m · ${sp.terrain.slope_desc ?? ''} · ${sp.terrain.aspect_cardinal ?? ''}${sp.terrain.aspect_cardinal ? '-facing' : ''}`
+        : (sp?.elevation ? `${Math.round(sp.elevation)}m asl` : (p.slope || '–')) },
   ];
 
   // ── Stage 3 additions (shown when data is available) ──

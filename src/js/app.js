@@ -26,6 +26,8 @@ import { runIngestion } from './modules/ingest.js';
 import { invalidateReportCache } from './modules/report.js';
 import { saveState, loadState, clearState, hasSavedState, getSavedScreen, getSavedAt } from './modules/persist.js';
 import { initTour } from './modules/tour.js';
+import { initLangToggle, applyTranslations } from './modules/i18n.js';
+import { refreshHonestyBanners } from './modules/honesty.js';
 
 // ── Share link receiver ────────────────────────────────────────────────
 //
@@ -174,6 +176,8 @@ function _resumeSession() {
     return;
   }
   showNav();
+  initLangToggle();
+  applyTranslations();
   initTour(); // tour state already has seen screens from previous session
   const screen = getSavedScreen();
   // Activate s0 → next screen transition correctly
@@ -233,6 +237,8 @@ function startApp() {
   saveState();
 
   showNav();
+  initLangToggle();
+  applyTranslations();
   initTour(); // start first-run tooltip tour
   navTo('s1');
 }
@@ -287,6 +293,7 @@ async function _startIngestion(lat, lng) {
     _setDashSub('✅ Site data loaded — ' + (APP.siteProfile?.climate || 'see Overview'));
     saveState(); // persist enriched siteProfile
     renderDashboard(); // refresh with real data
+    refreshHonestyBanners(); // update banners with terrain quality info
   } catch (e) {
     _setDashSub('Your property at a glance');
     // Silent fail — dashboard still works with user-entered data

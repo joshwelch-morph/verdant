@@ -14,6 +14,7 @@
  */
 
 import { APP } from './state.js';
+import { claudeLangInstruction } from './i18n.js';
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const API_VERSION = '2023-06-01';
@@ -261,7 +262,7 @@ export async function runPlantAnalysis(systems) {
       })()
     : 'No iNaturalist animal data — use regional knowledge for ' + prop.address;
 
-  const systemPrompt = `You are an expert permaculture designer, plant ecologist, herbalist, and wildlife ecologist. Respond ONLY with valid JSON — no markdown fences, no preamble, no explanation before or after the JSON.`;
+  const systemPrompt = `You are an expert permaculture designer, plant ecologist, herbalist, and wildlife ecologist. Respond ONLY with valid JSON — no markdown fences, no preamble, no explanation before or after the JSON.${claudeLangInstruction()}`;
 
   // Pull Stage 2 + Stage 3 data from siteProfile if available
   const sp = APP.siteProfile;
@@ -287,14 +288,29 @@ export async function runPlantAnalysis(systems) {
     ? `Peak solar: ${sp.solar_peak_month} (${sp.solar_peak_kwh} kWh/m²/day) · Lowest: ${sp.solar_low_month} (${sp.solar_low_kwh} kWh/m²/day)`
     : '';
 
+  // ── Terrain lines from 3DEP analysis ──
+  const t = sp?.terrain;
+  const terrainLine = t?.slope_desc
+    ? `${t.slope_desc}${t.slope_avg_pct != null ? ` (${t.slope_avg_pct}% avg, max ${t.slope_max_pct}%)` : ''} · ${t.aspect_cardinal || ''}-facing · ${t.elevation_min ?? '?'}–${t.elevation_max ?? '?'}m elevation range`
+    : (prop.slope ? `${prop.slope} slope` : 'slope unknown');
+  const swaleZoneLine = t?.swale_points?.length
+    ? `${t.swale_points.length} swale placement zone(s) identified on contour at ~${t.swale_points[0]?.elevation?.toFixed(1) ?? '?'}m`
+    : '';
+  const contourLine = t?.contour_interval_m
+    ? `Recommended contour interval: ${t.contour_interval_m}m`
+    : '';
+  const terrainSourceLine = t?.quality
+    ? `Terrain data: ${t.quality.source} (${t.quality.label})`
+    : '';
+
   const userPrompt = `Analyse this property and return plant recommendations, native medicinals, and a wildlife overview.
 
 PROPERTY: ${prop.name} | ${prop.address} | ${prop.size}
 Climate: ${prop.climate || 'temperate'} | Rainfall: ${prop.rainfall || 'unknown'}
 Hardiness: ${hardinessLine} | Frost: ${prop.frost || 'light'}
-Soil: ${prop.soil} | Slope: ${prop.slope || 'gentle'}${nitrogenLine ? `\nSoil nitrogen: ${nitrogenLine}` : ''}${cecLine ? ` | ${cecLine}` : ''}
+Soil: ${prop.soil} | Terrain: ${terrainLine}${nitrogenLine ? `\nSoil nitrogen: ${nitrogenLine}` : ''}${cecLine ? ` | ${cecLine}` : ''}
 Root zone: ${waterLine} | Seasonal water: ${droughtLine}${windLine ? `\nWind: ${windLine}` : ''}
-Water features: ${prop.water} | Existing: ${prop.existing || 'pasture'}${growingLine ? `\nPeak growing months: ${growingLine}` : ''}${solarSeasonLine ? `\nSolar seasonality: ${solarSeasonLine}` : ''}${landUseLine ? `\nSurrounding land use: ${landUseLine}` : ''}${gbifLine ? `\nLocal biodiversity: ${gbifLine}` : ''}
+Water features: ${prop.water} | Existing: ${prop.existing || 'pasture'}${growingLine ? `\nPeak growing months: ${growingLine}` : ''}${solarSeasonLine ? `\nSolar seasonality: ${solarSeasonLine}` : ''}${landUseLine ? `\nSurrounding land use: ${landUseLine}` : ''}${gbifLine ? `\nLocal biodiversity: ${gbifLine}` : ''}${swaleZoneLine ? `\nSwale zones: ${swaleZoneLine}` : ''}${contourLine ? `\n${contourLine}` : ''}
 Hemisphere: ${prop.address.match(/australia|new zealand|south africa|argentina|chile|brazil/i) ? 'Southern — north-facing slopes get more sun' : 'Northern — south-facing slopes get more sun'}
 Goals: ${prop.goals.join(', ')}
 SELECTED SYSTEMS: ${systems.join(', ')}

@@ -3,7 +3,8 @@
  * Property ingestion pipeline (Stage 1 + Stage 2 + Stage 3).
  *
  * Given a lat/lng (from geocoding the property address), fetches:
- *   1. Elevation          — OpenTopoData SRTM30m
+ *   1. Terrain analysis   — USGS 3DEP (1m LiDAR for US) or SRTM30m (global)
+ *                           Derives slope, aspect, contour zones, swale placement
  *   2. Climate & rainfall — NASA POWER (annual + extra AG parameters)
  *   3. Frost dates        — derived from NASA POWER T2M_MIN monthly data
  *   4. Soil description   — ISRIC SoilGrids (texture, pH, SOC, N, CEC)
@@ -21,26 +22,14 @@
  */
 
 import { APP } from './state.js';
+import { analyzeTerrain } from './terrain.js';
 
-// ── API helpers ────────────────────────────────────────────────────────
+// ── API helper ─────────────────────────────────────────────────────────
 
 async function fetchJSON(url, opts = {}) {
   const res = await fetch(url, opts);
   if (!res.ok) throw new Error(`Fetch failed: ${url} (${res.status})`);
   return res.json();
-}
-
-// ── 1. Elevation ───────────────────────────────────────────────────────
-
-async function fetchElevation(lat, lng) {
-  try {
-    const data = await fetchJSON(
-      `https://api.opentopodata.org/v1/srtm30m?locations=${lat},${lng}`
-    );
-    return data.results?.[0]?.elevation ?? null;
-  } catch {
-    return null;
-  }
 }
 
 // ── 2. NASA POWER — Stage 1 + Stage 2 parameters ──────────────────────
@@ -592,9 +581,14 @@ function _solarKw(nasa, sizeStr) {
  */
 export async function runIngestion(lat, lng) {
   // Stage 1 + 2 + 3 fetches all run in parallel.
+  // Terrain analysis (3DEP LiDAR) runs in parallel with climate/soil data.
   // GBIF and OSM are lower-stakes — failures return null gracefully.
-  const [elevation, nasa, meteo, soilGrids, gbif, landUse] = await Promise.all([
-    fetchElevation(lat, lng),
+  const sizeAcres = APP.property.size || '1';
+  const [terrain, nasa, meteo, soilGrids, gbif, landUse] = await Promise.all([
+    analyzeTerrain(lat, lng, sizeAcres).catch(e => {
+      console.warn('[Terrain] Analysis failed:', e.message);
+      return null;
+    }),
     fetchNASAPower(lat, lng),
     fetchOpenMeteo(lat, lng),
     fetchSoilGrids(lat, lng),
@@ -611,10 +605,26 @@ export async function runIngestion(lat, lng) {
   const soilDesc    = _describeSoil(soilGrids);
   const waterDesc   = _describeWaterBalance(nasa);
 
+  // elevation backward-compat: use terrain mean or fall back to null
+  const elevation   = terrain?.elevation ?? null;
+
+  // Enrich slope description with terrain data if available
+  const slopeDesc = terrain?.slope_desc ?? null;
+
   const siteProfile = {
     lat,
     lng,
     elevation,
+    // ── Terrain (new — replaces single elevation point) ────────────────
+    terrain,
+    // Convenience flat fields for backward compat + Claude prompt
+    slope_pct:      terrain?.slope_avg_pct    ?? null,
+    slope_desc:     slopeDesc,
+    aspect:         terrain?.aspect_cardinal  ?? null,
+    slope_position: terrain?.slope_desc       ?? null,
+    terrain_resolution: terrain?.resolution   ?? null,
+    terrain_source: terrain?.quality?.source  ?? 'unknown',
+    swale_zones:    terrain?.swale_points     ?? [],
     nasa,
     meteo,
     soilGrids,
@@ -662,6 +672,18 @@ export async function runIngestion(lat, lng) {
   APP.property.climate  = siteProfile.climate;
   APP.property.rainfall = siteProfile.rainfall;
   APP.property.frost    = siteProfile.frost;
+
+  // Terrain-derived slope and aspect into APP.property
+  if (terrain?.slope_desc) {
+    APP.property.slope = terrain.slope_desc
+      + (terrain.slope_avg_pct != null ? ` (${terrain.slope_avg_pct}% avg)` : '');
+  }
+  if (terrain?.aspect_cardinal) {
+    APP.property.aspect = terrain.aspect_cardinal + '-facing';
+  }
+  if (terrain?.elevation_min != null) {
+    APP.property.elevation_range = `${terrain.elevation_min}–${terrain.elevation_max}m`;
+  }
 
   // Hardiness zone into APP.property.hardiness
   if (hardiness?.zone) {

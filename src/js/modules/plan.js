@@ -14,6 +14,7 @@
 
 import { APP } from './state.js';
 import { openBrowser } from './plantbrowser.js';
+import { renderHonestyBanner } from './honesty.js';
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -337,6 +338,10 @@ export function renderPlan() {
   });
 
   _wireBrowseBtn();
+}
+
+  // Honesty / data quality banner
+  renderHonestyBanner('plan', 'planContent');
 }
 
 // ── Browse button wiring ─────────────────────────────────────────────────────
